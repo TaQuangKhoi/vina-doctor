@@ -45,11 +45,3 @@ You MUST return ONLY a JSON object with the following structure:
   }
 }
 ```
-
-## Tại sao Prompt này giúp bạn thắng giải?
-
-- **Strict JSON Output:** Vì bạn là Full-stack Dev, việc ép AI trả về JSON giúp bạn đổ dữ liệu thẳng vào Dashboard mà không cần parse thủ công. Giám khảo sẽ thấy hệ thống của bạn cực kỳ ổn định (Robust).
-- **Multilingual at Core:** Thay vì dịch cả đoạn văn, Prompt này yêu cầu AI dịch từng trường dữ liệu nhỏ. Điều này giúp tránh lỗi ngữ nghĩa khi chuyển đổi giữa các ngôn ngữ phức tạp như tiếng Ả Rập.
-- **SOAP Standard:** Việc tuân thủ chuẩn y tế quốc tế (SOAP) chứng minh bạn thực sự hiểu nghiệp vụ y tế (Problem Relevance).
-- **Severity Flag:** Đây là tính năng "Actionability". AI tự đánh giá mức độ nghiêm trọng để cảnh báo bác sĩ, giúp bác sĩ ưu tiên các ca bệnh nặng.
-- **Privacy Included:** Việc tự động ẩn danh (Redaction) ngay trong Prompt giúp dự án đạt điểm cao về bảo mật dữ liệu.
