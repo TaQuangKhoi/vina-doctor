@@ -38,3 +38,14 @@ def redact_pii(text: str) -> str:
     text = _EMAIL_PATTERN.sub(_REDACTED, text)
     text = _NATIONAL_ID_PATTERN.sub(_REDACTED, text)
     return text
+
+
+class TextCleanerService:
+    """Injectable wrapper around :func:`redact_pii`.
+
+    Implements ``TextCleanerProtocol`` so it can be constructor-injected
+    into use cases following the Dependency Inversion Principle.
+    """
+
+    def clean(self, text: str) -> str:
+        return redact_pii(text)

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from ai_engine.domain.value_objects import SeverityFlag
+from ai_engine.domain.value_objects import PipelineStatus, SeverityFlag, UrgencyLevel
 
 
 class TranscriptTurn(BaseModel):
@@ -44,12 +44,20 @@ class NextSteps(BaseModel):
     vn: str = "Not discussed"
 
 
+class Diagnostics(BaseModel):
+    primary_diagnosis: str = "Not specified"
+    icd10_code: str = ""
+    confidence_score: float = Field(default=0.0, ge=0.0, le=1.0)
+
+
 class ClinicalReport(BaseModel):
     chief_complaint: MultilingualText = MultilingualText()
     soap_notes: SOAPNotes = SOAPNotes()
     medications: list[Medication] = []
     icd10_codes: list[str] = []
     severity_flag: SeverityFlag = SeverityFlag.LOW
+    urgency_level: UrgencyLevel = UrgencyLevel.LOW
+    diagnostics: Optional[Diagnostics] = None
     next_steps: NextSteps = NextSteps()
 
 
@@ -60,8 +68,29 @@ class ConsultationMetadata(BaseModel):
     model: Optional[str] = None
 
 
+class SessionInfo(BaseModel):
+    detected_languages: list[str] = []
+    audio_quality: str = "unknown"
+
+
+class ScribeResult(BaseModel):
+    session_info: SessionInfo = SessionInfo()
+    transcript: list[TranscriptTurn] = []
+
+
+class ClinicalResult(BaseModel):
+    clinical_report: ClinicalReport = ClinicalReport()
+    multilingual_summary: MultilingualText = MultilingualText()
+
+
 class MedicalReport(BaseModel):
     metadata: ConsultationMetadata = ConsultationMetadata()
     transcript: list[TranscriptTurn] = []
     clinical_report: ClinicalReport = ClinicalReport()
     multilingual_summary: MultilingualText = MultilingualText()
+
+
+class PipelineState(BaseModel):
+    status: PipelineStatus = PipelineStatus.PENDING
+    current_step: str = ""
+    error: Optional[str] = None

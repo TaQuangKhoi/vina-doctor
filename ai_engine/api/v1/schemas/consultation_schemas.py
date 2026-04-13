@@ -6,7 +6,9 @@ from pydantic import BaseModel
 from ai_engine.domain.entities import (
     ClinicalReport,
     ConsultationMetadata,
+    Diagnostics,
     MultilingualText,
+    PipelineState,
     TranscriptTurn,
 )
 
@@ -18,6 +20,22 @@ class ProcessAudioResponse(BaseModel):
     transcript: list[TranscriptTurn]
     clinical_report: ClinicalReport
     multilingual_summary: MultilingualText
+
+
+class ProcessConsultationResponse(BaseModel):
+    """HTTP response schema for POST /v1/consultations/process-v2."""
+
+    metadata: ConsultationMetadata
+    transcript: list[TranscriptTurn]
+    clinical_report: ClinicalReport
+    multilingual_summary: MultilingualText
+
+
+class PipelineStateResponse(BaseModel):
+    """HTTP response schema for GET /v1/consultations/{session_id}/status."""
+
+    session_id: str
+    state: PipelineState
 
 
 class ErrorResponse(BaseModel):
