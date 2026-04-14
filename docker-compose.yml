@@ -19,8 +19,8 @@ services:
   # Calls ai_engine over the internal Docker network.
   backend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
       - "8001:8001"
     env_file:

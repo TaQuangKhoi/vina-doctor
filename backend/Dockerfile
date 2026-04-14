@@ -4,10 +4,10 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /app
 
-# Copy the backend package directory
+# Build context is ./backend — copy its contents into /app/backend/
 # package-dir {"" = ".."} in pyproject.toml means setuptools looks in /app/
-# for packages, and finds the `backend` package at /app/backend/
-COPY backend/ ./backend/
+# (the parent) and finds the `backend` package at /app/backend/
+COPY . ./backend/
 
 # Install all dependencies (including uvicorn) declared in pyproject.toml
 RUN cd backend && uv pip install --system .
