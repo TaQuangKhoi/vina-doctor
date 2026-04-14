@@ -14,9 +14,15 @@ from backend.api.v1.schemas.consultation import (
     ConsultationListResponse,
     ConsultationResponse,
 )
-from backend.application.use_cases.create_consultation_use_case import CreateConsultationUseCase
-from backend.application.use_cases.get_consultation_use_case import GetConsultationUseCase
-from backend.application.use_cases.list_consultations_use_case import ListConsultationsUseCase
+from backend.application.use_cases.create_consultation_use_case import (
+    CreateConsultationUseCase,
+)
+from backend.application.use_cases.get_consultation_use_case import (
+    GetConsultationUseCase,
+)
+from backend.application.use_cases.list_consultations_use_case import (
+    ListConsultationsUseCase,
+)
 from backend.domain.entities import Consultation
 from backend.domain.errors import AccessDeniedError, NotFoundError
 
@@ -88,7 +94,11 @@ async def get_consultation(
             consultation_id=consultation_id, doctor_id=doctor_id
         )
     except NotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
     except AccessDeniedError as exc:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)
+        ) from exc
     return _to_response(consultation)

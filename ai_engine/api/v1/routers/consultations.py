@@ -26,12 +26,14 @@ router = APIRouter(prefix="/v1/consultations", tags=["consultations"])
 def _get_use_case() -> ProcessAudioUseCase:
     """Dependency injector — resolved by the app factory in main.py."""
     from ai_engine.main import get_process_audio_use_case  # noqa: PLC0415
+
     return get_process_audio_use_case()
 
 
 def _get_consultation_use_case() -> ProcessConsultationUseCase:
     """Dependency injector — resolved by the app factory in main.py."""
     from ai_engine.main import get_process_consultation_use_case  # noqa: PLC0415
+
     return get_process_consultation_use_case()
 
 

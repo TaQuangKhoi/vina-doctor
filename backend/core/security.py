@@ -16,7 +16,9 @@ def verify_password(plain: str, hashed: str) -> bool:
     return _pwd_context.verify(plain, hashed)
 
 
-def create_access_token(user_id: str, secret_key: str, algorithm: str, expire_minutes: int) -> str:
+def create_access_token(
+    user_id: str, secret_key: str, algorithm: str, expire_minutes: int
+) -> str:
     expire = datetime.now(tz=timezone.utc) + timedelta(minutes=expire_minutes)
     payload = {"sub": user_id, "exp": expire}
     return jwt.encode(payload, secret_key, algorithm=algorithm)

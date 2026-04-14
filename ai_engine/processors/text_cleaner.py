@@ -12,9 +12,7 @@ _PHONE_PATTERN = re.compile(
 )
 
 # Email addresses.
-_EMAIL_PATTERN = re.compile(
-    r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
-)
+_EMAIL_PATTERN = re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
 
 # Numeric ID-style strings that resemble CMND/CCCD (Vietnamese national ID).
 _NATIONAL_ID_PATTERN = re.compile(r"\b\d{9,12}\b")

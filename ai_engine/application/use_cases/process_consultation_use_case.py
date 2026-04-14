@@ -145,9 +145,7 @@ class ProcessConsultationUseCase:
             scribe_result = self._scribe.transcribe(ready_path, model=scribe_model)
         except ScribeAgentError as exc:
             self._fail(session_id, str(exc))
-            raise ProcessConsultationError(
-                f"Scribe agent failed: {exc}"
-            ) from exc
+            raise ProcessConsultationError(f"Scribe agent failed: {exc}") from exc
 
         # Step 4: Text cleaning — PII redaction
         self._update_state(session_id, PipelineStatus.CLEANING, "text_cleaner")
@@ -163,9 +161,7 @@ class ProcessConsultationUseCase:
             clinical_result = self._clinical.analyze(cleaned_text, model=clinical_model)
         except ClinicalAgentError as exc:
             self._fail(session_id, str(exc))
-            raise ProcessConsultationError(
-                f"Clinical agent failed: {exc}"
-            ) from exc
+            raise ProcessConsultationError(f"Clinical agent failed: {exc}") from exc
 
         # Step 6: Merge results into MedicalReport
         self._update_state(session_id, PipelineStatus.COMPLETED, "done")

@@ -60,7 +60,9 @@ class MedicalReporter:
         meta_raw = data.get("metadata", {})
         metadata = ConsultationMetadata(
             primary_language=meta_raw.get("primary_language", "unknown"),
-            consultation_duration_estimate=meta_raw.get("consultation_duration_estimate"),
+            consultation_duration_estimate=meta_raw.get(
+                "consultation_duration_estimate"
+            ),
             session_id=meta_raw.get("session_id"),
             model=meta_raw.get("model"),
         )

@@ -13,7 +13,9 @@ class LocalAudioStorage:
         self._root = Path(root)
         self._root.mkdir(parents=True, exist_ok=True)
 
-    async def save(self, consultation_id: UUID, audio_bytes: bytes, filename: str) -> str:
+    async def save(
+        self, consultation_id: UUID, audio_bytes: bytes, filename: str
+    ) -> str:
         suffix = Path(filename).suffix or ".mp3"
         dest = self._root / f"{consultation_id}{suffix}"
         async with aiofiles.open(dest, "wb") as f:

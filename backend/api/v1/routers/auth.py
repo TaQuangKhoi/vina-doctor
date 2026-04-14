@@ -4,7 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from backend.api.v1.deps import get_login_use_case, get_register_use_case
 from backend.api.v1.schemas.auth import LoginRequest, RegisterRequest, TokenResponse
-from backend.application.use_cases.auth_use_cases import LoginUseCase, RegisterUserUseCase
+from backend.application.use_cases.auth_use_cases import (
+    LoginUseCase,
+    RegisterUserUseCase,
+)
 from backend.domain.errors import AccessDeniedError, DuplicateEmailError
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -28,7 +31,9 @@ async def register(
             full_name=body.full_name,
         )
     except DuplicateEmailError as exc:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from exc
 
     # Auto-login after registration
     token = await login_use_case.execute(email=body.email, plain_password=body.password)

@@ -5,12 +5,23 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from backend.application.services.consultation_orchestrator import ConsultationOrchestrator
-from backend.application.use_cases.auth_use_cases import LoginUseCase, RegisterUserUseCase
-from backend.application.use_cases.create_consultation_use_case import CreateConsultationUseCase
-from backend.application.use_cases.get_consultation_use_case import GetConsultationUseCase
+from backend.application.services.consultation_orchestrator import (
+    ConsultationOrchestrator,
+)
+from backend.application.use_cases.auth_use_cases import (
+    LoginUseCase,
+    RegisterUserUseCase,
+)
+from backend.application.use_cases.create_consultation_use_case import (
+    CreateConsultationUseCase,
+)
+from backend.application.use_cases.get_consultation_use_case import (
+    GetConsultationUseCase,
+)
 from backend.application.use_cases.get_report_use_case import GetReportUseCase
-from backend.application.use_cases.list_consultations_use_case import ListConsultationsUseCase
+from backend.application.use_cases.list_consultations_use_case import (
+    ListConsultationsUseCase,
+)
 from backend.core.config import get_settings
 from backend.core.security import (
     create_access_token,
@@ -38,6 +49,7 @@ _bearer = HTTPBearer()
 # Repository factories (session-scoped)
 # ---------------------------------------------------------------------------
 
+
 def get_user_repo(session=Depends(get_session)):
     return SqlAlchemyUserRepository(session)
 
@@ -53,6 +65,7 @@ def get_report_repo(session=Depends(get_session)):
 # ---------------------------------------------------------------------------
 # Infrastructure (singletons created at startup via lifespan, injected here)
 # ---------------------------------------------------------------------------
+
 
 def get_ai_engine_client():
     settings = get_settings()
@@ -71,6 +84,7 @@ def get_audio_storage():
 # Orchestrator
 # ---------------------------------------------------------------------------
 
+
 def get_orchestrator(
     consultation_repo=Depends(get_consultation_repo),
     report_repo=Depends(get_report_repo),
@@ -88,6 +102,7 @@ def get_orchestrator(
 # ---------------------------------------------------------------------------
 # Use case factories
 # ---------------------------------------------------------------------------
+
 
 def get_register_use_case(user_repo=Depends(get_user_repo)):
     return RegisterUserUseCase(user_repo=user_repo, hash_password=hash_password)
@@ -140,6 +155,7 @@ def get_get_report_use_case(
 # ---------------------------------------------------------------------------
 # Auth guard
 # ---------------------------------------------------------------------------
+
 
 def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(_bearer),

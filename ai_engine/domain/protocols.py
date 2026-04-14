@@ -9,13 +9,17 @@ from ai_engine.domain.entities import ClinicalResult, PipelineState, ScribeResul
 class ScribeAgentProtocol(Protocol):
     """Transcribes audio into a structured transcript with speaker diarization."""
 
-    def transcribe(self, audio_path: Path, model: str | None = None) -> ScribeResult: ...
+    def transcribe(
+        self, audio_path: Path, model: str | None = None
+    ) -> ScribeResult: ...
 
 
 class ClinicalAgentProtocol(Protocol):
     """Analyses a cleaned transcript and produces a structured clinical report."""
 
-    def analyze(self, transcript_text: str, model: str | None = None) -> ClinicalResult: ...
+    def analyze(
+        self, transcript_text: str, model: str | None = None
+    ) -> ClinicalResult: ...
 
 
 class ModelSelectorProtocol(Protocol):

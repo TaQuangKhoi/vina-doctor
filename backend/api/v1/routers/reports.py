@@ -5,7 +5,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from backend.api.v1.deps import get_current_user_id, get_get_report_use_case
-from backend.api.v1.schemas.report import MedicationSchema, MultilingualTextSchema, ReportResponse, SOAPReportSchema
+from backend.api.v1.schemas.report import (
+    MedicationSchema,
+    MultilingualTextSchema,
+    ReportResponse,
+    SOAPReportSchema,
+)
 from backend.application.use_cases.get_report_use_case import GetReportUseCase
 from backend.domain.entities import Report
 from backend.domain.errors import AccessDeniedError, NotFoundError
@@ -46,7 +51,11 @@ async def get_report(
             consultation_id=consultation_id, doctor_id=doctor_id
         )
     except NotFoundError as exc:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
     except AccessDeniedError as exc:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)
+        ) from exc
     return _to_response(report)

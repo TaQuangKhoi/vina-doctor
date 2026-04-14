@@ -33,20 +33,25 @@ _consultation_use_case: ProcessConsultationUseCase | None = None
 def get_process_audio_use_case() -> ProcessAudioUseCase:
     """Return the singleton ProcessAudioUseCase; raises if not yet initialised."""
     if _use_case is None:
-        raise RuntimeError("Application has not been initialised. Call create_app() first.")
+        raise RuntimeError(
+            "Application has not been initialised. Call create_app() first."
+        )
     return _use_case
 
 
 def get_process_consultation_use_case() -> ProcessConsultationUseCase:
     """Return the singleton ProcessConsultationUseCase; raises if not yet initialised."""
     if _consultation_use_case is None:
-        raise RuntimeError("Application has not been initialised. Call create_app() first.")
+        raise RuntimeError(
+            "Application has not been initialised. Call create_app() first."
+        )
     return _consultation_use_case
 
 
 # ---------------------------------------------------------------------------
 # App factory
 # ---------------------------------------------------------------------------
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -106,4 +111,3 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-
