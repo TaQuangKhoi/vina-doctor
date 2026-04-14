@@ -19,7 +19,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-vina}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vina_secret}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     networks:
       - app-net
     restart: unless-stopped
