@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from backend.domain.entities import Report
-from backend.domain.errors import NotFoundError
 from backend.domain.repositories import ConsultationRepository
 from backend.domain.value_objects import ConsultationStatus
 from backend.infrastructure.clients.ai_engine_protocol import AiEngineClientProtocol
@@ -30,7 +28,9 @@ class ConsultationOrchestrator:
         self._consultation_repo = consultation_repo
         self._report_repo = report_repo
 
-    async def run(self, consultation_id: UUID, model: str = "qwen-audio-turbo") -> DomainReport:
+    async def run(
+        self, consultation_id: UUID, model: str = "qwen-audio-turbo"
+    ) -> DomainReport:
         consultation = await self._consultation_repo.get_by_id(consultation_id)
 
         await self._consultation_repo.update_status(

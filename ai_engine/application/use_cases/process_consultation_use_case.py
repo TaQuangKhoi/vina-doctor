@@ -6,10 +6,8 @@ from pathlib import Path
 from ai_engine.agents.clinical_agent import ClinicalAgentError
 from ai_engine.agents.scribe_agent import ScribeAgentError
 from ai_engine.domain.entities import (
-    ClinicalReport,
     ConsultationMetadata,
     MedicalReport,
-    MultilingualText,
     PipelineState,
 )
 from ai_engine.domain.protocols import (

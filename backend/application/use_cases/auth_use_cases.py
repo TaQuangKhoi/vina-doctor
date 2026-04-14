@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from uuid import UUID
-
 from backend.domain.entities import User
 from backend.domain.errors import AccessDeniedError, DuplicateEmailError
 from backend.domain.repositories import UserRepository
@@ -34,7 +32,7 @@ class LoginUseCase:
         self,
         user_repo: UserRepository,
         verify_password,  # (plain: str, hashed: str) -> bool
-        create_token,     # (user_id: str) -> str
+        create_token,  # (user_id: str) -> str
     ) -> None:
         self._user_repo = user_repo
         self._verify_password = verify_password
@@ -42,6 +40,8 @@ class LoginUseCase:
 
     async def execute(self, email: str, plain_password: str) -> str:
         user = await self._user_repo.get_by_email(email)
-        if user is None or not self._verify_password(plain_password, user.hashed_password):
+        if user is None or not self._verify_password(
+            plain_password, user.hashed_password
+        ):
             raise AccessDeniedError("Invalid email or password.")
         return self._create_token(str(user.id))

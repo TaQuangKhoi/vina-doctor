@@ -3,10 +3,11 @@ from __future__ import annotations
 import asyncio
 from uuid import UUID
 
-from backend.domain.entities import Consultation, Report
-from backend.domain.errors import DuplicateEmailError
+from backend.domain.entities import Consultation
 from backend.domain.repositories import ConsultationRepository
-from backend.application.services.consultation_orchestrator import ConsultationOrchestrator
+from backend.application.services.consultation_orchestrator import (
+    ConsultationOrchestrator,
+)
 from backend.domain.value_objects import ConsultationStatus
 from backend.infrastructure.storage.audio_storage_protocol import AudioStorageProtocol
 
@@ -40,7 +41,9 @@ class CreateConsultationUseCase:
             status=ConsultationStatus.PENDING,
         )
 
-        audio_path = await self._audio_storage.save(consultation.id, audio_bytes, filename)
+        audio_path = await self._audio_storage.save(
+            consultation.id, audio_bytes, filename
+        )
 
         # Pydantic frozen model — rebuild with audio_path set
         consultation = consultation.model_copy(update={"audio_path": audio_path})

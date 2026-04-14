@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
 from backend.core.config import get_settings
-from backend.domain.errors import AccessDeniedError, DomainError, NotFoundError
+from backend.domain.errors import AccessDeniedError, NotFoundError
 from backend.infrastructure.db.models import Base
 from backend.infrastructure.db.session import get_engine, init_db
 from backend.api.v1.routers.auth import router as auth_router

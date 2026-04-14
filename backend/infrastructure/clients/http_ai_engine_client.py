@@ -3,7 +3,6 @@ from __future__ import annotations
 import httpx
 
 from backend.domain.entities import Medication, MultilingualText, SOAPReport
-from backend.infrastructure.clients.ai_engine_protocol import AiEngineClientProtocol
 
 
 class HttpAiEngineClient:
@@ -35,7 +34,7 @@ class HttpAiEngineClient:
 def _map_response_to_soap(data: dict) -> SOAPReport:
     report = data.get("clinical_report", {})
     soap = report.get("soap_notes", {})
-    multilingual = data.get("multilingual_summary", {})
+    data.get("multilingual_summary", {})
 
     def _ml(field: dict | None) -> MultilingualText:
         if not field:

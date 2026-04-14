@@ -37,6 +37,7 @@ services:
       - app-net
     restart: unless-stopped
 
+
   # ── 3. Backend ──────────────────────────────────────────────────────────────
   # FastAPI REST API for auth, consultation management, and report retrieval.
   # Calls ai_engine over the internal Docker network.

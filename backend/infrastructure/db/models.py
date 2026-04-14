@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import uuid
 from datetime import datetime
 
@@ -18,7 +17,9 @@ class UserModel(Base):
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    email: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -32,7 +33,9 @@ class ConsultationModel(Base):
     __tablename__ = "consultations"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    doctor_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    doctor_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id"), nullable=False, index=True
+    )
     audio_path: Mapped[str] = mapped_column(String(512), nullable=False)
     status: Mapped[str] = mapped_column(
         Enum(ConsultationStatus, name="consultation_status"),
@@ -44,7 +47,9 @@ class ConsultationModel(Base):
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
-    doctor: Mapped[UserModel] = relationship("UserModel", back_populates="consultations")
+    doctor: Mapped[UserModel] = relationship(
+        "UserModel", back_populates="consultations"
+    )
     report: Mapped[ReportModel | None] = relationship(
         "ReportModel", back_populates="consultation", uselist=False
     )

@@ -4,8 +4,6 @@ from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from backend.core.config import get_settings
-
 _engine = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None
 

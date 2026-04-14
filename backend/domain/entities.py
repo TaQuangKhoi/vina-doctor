@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from backend.domain.value_objects import ConsultationStatus, Language
+from backend.domain.value_objects import ConsultationStatus
 
 
 class User(BaseModel):
