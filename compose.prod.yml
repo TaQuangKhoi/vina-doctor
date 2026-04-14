@@ -1,14 +1,18 @@
 # Production compose file — pulls pre-built images from GHCR.
-# Used on ECS via: docker compose -f docker-compose.prod.yml up -d
+# Used on ECS via: docker compose -f compose.prod.yml up -d
 #
 # Set image tags via env vars or defaults to :latest.
 # Requires a .env file with DASHSCOPE_API_KEY and other secrets.
+#
+# Topology:
+#   Internet → nginx:80 → /api/  → backend:8001
+#                       → /v1/   → ai_engine:8000
+#                       → /      → frontend:3000
+# backend and ai_engine are NOT exposed to the host; nginx is the only entry point.
 
 services:
   ai_engine:
     image: ${AI_ENGINE_IMAGE:-ghcr.io/sotaworksvn/vina-doctor/ai-engine:latest}
-    ports:
-      - "8000:8000"
     env_file:
       - .env
     networks:
@@ -17,8 +21,6 @@ services:
 
   backend:
     image: ${BACKEND_IMAGE:-ghcr.io/sotaworksvn/vina-doctor/backend:latest}
-    ports:
-      - "8001:8001"
     env_file:
       - .env
     environment:
@@ -35,13 +37,22 @@ services:
 
   frontend:
     image: ${FRONTEND_IMAGE:-ghcr.io/sotaworksvn/vina-doctor/frontend:latest}
-    ports:
-      - "3000:3000"
-    environment:
-      NEXT_PUBLIC_BACKEND_URL: http://localhost:8001
-      NEXT_PUBLIC_AI_ENGINE_URL: http://localhost:8000
     depends_on:
       - backend
+    networks:
+      - app-net
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+      - ai_engine
     networks:
       - app-net
     restart: unless-stopped
