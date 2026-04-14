@@ -39,3 +39,19 @@ See each sub-directory's `README.md` for setup instructions:
 - [`ai_engine/README.md`](ai_engine/README.md)
 - [`backend/README.md`](backend/README.md)
 - [`frontend/README.md`](frontend/README.md)
+
+## Run with Docker Compose
+
+The repository includes a top-level `docker-compose.yml` which defines the full system topology (Postgres, ai_engine, backend, frontend, nginx). Use this file to run the entire system.
+
+Examples:
+
+```bash
+# Development (build locally):
+docker compose up --build
+
+# Production (pull published images and start detached):
+docker compose pull && docker compose up -d
+```
+
+Ensure you have a `.env` file populated (copy from `.env.example`) before starting.

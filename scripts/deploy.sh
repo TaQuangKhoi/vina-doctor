@@ -1,5 +1,12 @@
+
 #!/usr/bin/env bash
 set -euo pipefail
+
+# Deployment helper — expects a `docker-compose.yml` at $DEPLOY_DIR.
+# Use the repository's `docker-compose.yml` to run the full system:
+#   Dev:  `docker compose up --build`
+#   Prod: `docker compose pull && docker compose up -d`
+# This script performs a pull/build + start and a simple health check.
 
 DEPLOY_DIR="/opt/vina-doctor"
 COMPOSE_FILE="$DEPLOY_DIR/docker-compose.yml"

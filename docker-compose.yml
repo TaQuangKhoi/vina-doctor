@@ -3,7 +3,8 @@
 #                       → /v1/   → ai_engine:8000
 #                       → /      → frontend:3000
 #
-# Dev  (build locally):  docker compose up --build
+# Use this file (`docker-compose.yml`) to run the entire system.
+# Dev (build locally):  docker compose up --build
 # Prod (pull from GHCR): docker compose pull && docker compose up -d
 #
 # Image tags can be overridden via env vars (default: :latest).
