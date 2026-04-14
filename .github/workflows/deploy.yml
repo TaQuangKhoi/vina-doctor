@@ -107,6 +107,7 @@ jobs:
           script: |
             set -euo pipefail
             cd /opt/vina-doctor
+            mkdir -p scripts
 
             # Pull and run the deploy script from the repo
             DEPLOY_SCRIPT_URL="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}/scripts/deploy-ecs.sh"
