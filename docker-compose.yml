@@ -1,0 +1,69 @@
+services:
+  # ── 1. AI Engine ────────────────────────────────────────────────────────────
+  # FastAPI service that processes audio and produces SOAP notes via Qwen2-Audio.
+  # Build context is the repo root (Dockerfile lives there).
+  ai_engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    networks:
+      - app-net
+    restart: unless-stopped
+
+  # ── 2. Backend ──────────────────────────────────────────────────────────────
+  # FastAPI REST API for auth, consultation management, and report retrieval.
+  # Calls ai_engine over the internal Docker network.
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    environment:
+      # Override the AI Engine URL to use the internal service name
+      AI_ENGINE_URL: http://ai_engine:8000
+      # Store SQLite database and audio uploads in a named volume
+      DATABASE_URL: sqlite+aiosqlite:////data/vina_doctor.db
+      AUDIO_STORAGE_PATH: /data/audio_uploads
+    volumes:
+      - backend_data:/data
+    depends_on:
+      - ai_engine
+    networks:
+      - app-net
+    restart: unless-stopped
+
+  # ── 3. Frontend ─────────────────────────────────────────────────────────────
+  # Next.js app served from a minimal standalone build image.
+  # For client-side API calls the browser uses localhost ports directly.
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      # Public vars are inlined at build time; set them here if you rebuild the
+      # image via `docker compose build` (or pass as build-args if preferred).
+      NEXT_PUBLIC_BACKEND_URL: http://localhost:8001
+      NEXT_PUBLIC_AI_ENGINE_URL: http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - app-net
+    restart: unless-stopped
+
+# ── Shared network ─────────────────────────────────────────────────────────────
+networks:
+  app-net:
+    driver: bridge
+
+# ── Named volumes ──────────────────────────────────────────────────────────────
+volumes:
+  backend_data:   # SQLite DB + audio file uploads
