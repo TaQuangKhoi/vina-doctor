@@ -70,25 +70,36 @@ jobs:
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
+        env:
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
         with:
           host: ${{ secrets.ECS_HOST }}
           username: root
           key: ${{ secrets.ECS_SSH_KEY }}
+          envs: DASHSCOPE_API_KEY,SECRET_KEY,GITHUB_TOKEN,GITHUB_ACTOR,GITHUB_REPOSITORY,GITHUB_SHA
           script: |
             mkdir -p /opt/vina-doctor
             cd /opt/vina-doctor
 
+            # Generate .env from secrets
+            printf 'DASHSCOPE_API_KEY=%s\nSECRET_KEY=%s\n' \
+              "${DASHSCOPE_API_KEY}" "${SECRET_KEY}" > .env
+
             # Pull production compose file from repo
-            curl -sL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/compose.prod.yml" -o compose.prod.yml
+            curl -sL "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}/compose.prod.yml" -o compose.prod.yml
 
             # Login to GHCR
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
 
             # Pull images with specific SHA tag for reproducibility
-            SHA="${{ github.sha }}"
-            export AI_ENGINE_IMAGE="ghcr.io/${{ github.repository }}/ai-engine:${SHA}"
-            export BACKEND_IMAGE="ghcr.io/${{ github.repository }}/backend:${SHA}"
-            export FRONTEND_IMAGE="ghcr.io/${{ github.repository }}/frontend:${SHA}"
+            export AI_ENGINE_IMAGE="ghcr.io/${GITHUB_REPOSITORY}/ai-engine:${GITHUB_SHA}"
+            export BACKEND_IMAGE="ghcr.io/${GITHUB_REPOSITORY}/backend:${GITHUB_SHA}"
+            export FRONTEND_IMAGE="ghcr.io/${GITHUB_REPOSITORY}/frontend:${GITHUB_SHA}"
 
             docker compose -f compose.prod.yml up -d --remove-orphans
 
