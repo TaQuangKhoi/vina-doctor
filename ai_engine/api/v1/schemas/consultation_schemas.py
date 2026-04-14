@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from ai_engine.domain.entities import (
     ClinicalReport,
     ConsultationMetadata,
+    Diagnostics,
     MultilingualText,
     PipelineState,
     TranscriptTurn,
