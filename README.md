@@ -1,49 +1,41 @@
 # vina-doctor
 
-Theo cách chia 3 khối frontend, backend, ai_engine của dự án này, tôi sẽ đặt như sau:
+A medical consultation platform that records doctor–patient audio, transcribes it with speaker diarization, and generates multilingual SOAP reports using Alibaba's Qwen AI models.
 
-**Phân Vai Trách Nhiệm**
+## Architecture
 
-1. Client record audio: frontend
-   Frontend chịu trách nhiệm xin quyền microphone, ghi âm, hiển thị trạng thái thu, và upload file hoặc stream audio lên API.
+The project is divided into three services:
 
-2. Gửi audio lên FastAPI: `frontend -> backend`
-   Frontend chỉ gọi HTTP/WebSocket tới FastAPI. Điểm nhận request phải nằm ở backend, không đặt ở ai_engine.
+| Service | Responsibility |
+|---|---|
+| **frontend** | Microphone recording, audio upload, progress display, multilingual report viewer |
+| **backend** | API gateway, authentication, database persistence, job orchestration |
+| **ai_engine** | Audio transcription (STT + diarization), clinical analysis, SOAP report generation |
 
-3. FastAPI đẩy sang DashScope để lấy Transcript + Diarization: chia 2 lớp
-   backend: orchestration, auth, request lifecycle, retry, timeout, logging, job status.
-   ai_engine: logic AI/audio, adapter gọi DashScope Qwen2.5-Audio, chuẩn hóa transcript, diarization mapping.
-   
-   Nói ngắn gọn: backend điều phối, ai_engine xử lý AI.
+### Data flow
 
-4. FastAPI gửi Transcript + Master Prompt sang Qwen Max để trích xuất báo cáo: cũng chia 2 lớp
-   backend: nhận transcript, gọi pipeline trích xuất, kiểm soát schema đầu ra, lưu trạng thái.
-   ai_engine: prompt management, extraction logic, gọi Qwen Max, validate/normalize JSON báo cáo.
+```
+frontend  →  record audio, upload, display progress
+backend   →  receive audio, create consultation job, call ai_engine
+ai_engine →  VAD check, audio pre-processing (ffmpeg)
+          →  ScribeAgent: Qwen2-Audio → structured transcript + diarization
+          →  TextCleanerService: PII redaction
+          →  ClinicalAgent: Qwen model → SOAP report + diagnostics
+backend   →  persist to DB, return normalised JSON
+frontend  →  render multilingual report
+```
 
-5. Database lưu kết quả: backend
-   Database là phần hạ tầng của backend. Backend nên là nơi duy nhất đọc/ghi DB để giữ transaction, authz, audit log, versioning của report.
+## Repository structure
 
-6. Client nhận JSON và render báo cáo đa ngôn ngữ đẹp mắt: frontend
-   Frontend nhận JSON đã chuẩn hóa từ backend rồi render thành report viewer, timeline hội thoại, speaker segments, multilingual tabs, export PDF nếu cần.
+```
+vina-doctor/
+├── ai_engine/   # FastAPI AI service — transcription + clinical analysis
+├── backend/     # FastAPI backend — API, auth, DB
+├── frontend/    # Next.js frontend — recording and report UI
+└── docs/        # Additional documentation
+```
 
-**Quy Tắc Kiến Trúc Nên Giữ**
-
-- frontend chỉ lo UX: record, upload, polling/realtime updates, render kết quả.
-- backend là cổng vào duy nhất: API, auth, DB, job orchestration, queue/background task.
-- ai_engine là domain AI thuần: STT, diarization, prompt, extraction, normalization, multilingual generation.
-- `database` thuộc backend/infrastructure, không cho frontend hay ai_engine ghi trực tiếp.
-
-**Map Theo Luồng Hoàn Chỉnh**
-
-frontend -> thu âm, upload, hiển thị tiến trình  
-backend -> nhận audio, tạo consultation/job, gọi ai_engine  
-ai_engine -> gọi DashScope Audio, lấy transcript + diarization  
-ai_engine -> gọi Qwen Max với master prompt, trả structured report  
-backend -> lưu DB, trả JSON chuẩn hóa  
-frontend -> render báo cáo đa ngôn ngữ
-
-Từ tài liệu hiện có của repo, cách chia này cũng khớp với hướng dẫn trong vina-doctor-agent.md và workflow tổng quát trong workflow.md.
-
-Nếu cần, tôi có thể làm tiếp 1 trong 2 việc sau:
-1. Vẽ lại sơ đồ component/data flow chuẩn cho repo này.
-2. Đề xuất luôn cấu trúc thư mục/API endpoint/job schema cụ thể cho 3 khối.
+See each sub-directory's `README.md` for setup instructions:
+- [`ai_engine/README.md`](ai_engine/README.md)
+- [`backend/README.md`](backend/README.md)
+- [`frontend/README.md`](frontend/README.md)
