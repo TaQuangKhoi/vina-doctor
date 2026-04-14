@@ -101,12 +101,30 @@ jobs:
           key: ${{ secrets.ECS_SSH_KEY }}
           envs: GITHUB_TOKEN,GITHUB_ACTOR,GITHUB_REPOSITORY,GITHUB_SHA
           script: |
+            set -euo pipefail
             cd /opt/vina-doctor
 
-            # Pull production compose file and nginx config from repo
-            curl -sL "https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}/compose.prod.yml" -o compose.prod.yml
+            # Pull production compose file and nginx config from repo (fail on HTTP error)
+            COMPOSE_URL="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}/compose.prod.yml"
+            NGINX_URL="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}/nginx/nginx.conf"
+            echo "Fetching $COMPOSE_URL"
+            if ! curl -fsSL "$COMPOSE_URL" -o compose.prod.yml; then
+              echo "ERROR: failed to download compose.prod.yml from $COMPOSE_URL"
+              exit 1
+            fi
             mkdir -p nginx
-            curl -sL "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_SHA}/nginx/nginx.conf" -o nginx/nginx.conf
+            echo "Fetching $NGINX_URL"
+            if ! curl -fsSL "$NGINX_URL" -o nginx/nginx.conf; then
+              echo "ERROR: failed to download nginx/nginx.conf from $NGINX_URL"
+              exit 1
+            fi
+
+            # Validate compose file before running
+            if ! docker compose -f compose.prod.yml config >/dev/null; then
+              echo "ERROR: compose.prod.yml is invalid — dumping contents for debug:"
+              sed -n '1,200p' compose.prod.yml || true
+              exit 1
+            fi
 
             # Login to GHCR
             echo "${GITHUB_TOKEN}" | docker login ghcr.io -u "${GITHUB_ACTOR}" --password-stdin
