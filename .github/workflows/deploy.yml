@@ -3,6 +3,11 @@ name: Deploy to ECS
 on:
   push:
     branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'ai_engine/**'
+      - 'Dockerfile'
 
 concurrency:
   group: deploy-ecs
