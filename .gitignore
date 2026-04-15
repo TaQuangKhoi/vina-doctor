@@ -34,6 +34,13 @@ Thumbs.db
 # Docker
 *.log
 
+# LaTeX
+*.aux
+*.log
+*.out
+*.toc
+*.bak*
+
 # Build
 dist/
 build/
