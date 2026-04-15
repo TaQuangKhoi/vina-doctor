@@ -46,9 +46,13 @@
 \pagestyle{fancy}
 
 % --- Title formatting -------------------------------------------------------
-\titleformat{\section}{\color{primary}\Large\bfseries}{}{0em}{#1}
-\titleformat{\subsection}{\color{primary}\large\bfseries}{}{0em}{#1}
-\titleformat{\subsubsection}{\color{primary}\normalsize\bfseries}{}{0em}{#1}
+% Preserve the section number and add a small separation so the
+% automatically generated number does not run into the title text.
+% The third argument sets the label (\thesection, \thesubsection, ...)
+% and the fourth argument is the horizontal separation between label and title.
+\titleformat{\section}{\color{primary}\Large\bfseries}{\thesection}{0.75em}{#1}
+\titleformat{\subsection}{\color{primary}\large\bfseries}{\thesubsection}{0.5em}{#1}
+\titleformat{\subsubsection}{\color{primary}\normalsize\bfseries}{\thesubsubsection}{0.5em}{#1}
 
 % --- Custom commands ---------------------------------------------------------
 \newcommand{\cmd}[1]{\texttt{#1}}
@@ -200,7 +204,9 @@ tapped from the top bar. Tapping the hamburger reveals the same navigation links
 \end{enumerate}
 
 \subsection{Accepted File Formats}
-\begin{tabular}{ll}
+% Use a compact two-column description list to avoid the section number
+% colliding with the heading when the PDF renderer compresses spacing.
+\begin{tabular}{@{}p{2.2cm}@{}p{11cm}@{}}
 	\texttt{.mp3}  & MPEG Audio Layer III       \\
 	\texttt{.wav}  & Waveform Audio File Format \\
 	\texttt{.m4a}  & MPEG-4 Audio               \\
