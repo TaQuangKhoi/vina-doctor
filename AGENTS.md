@@ -51,9 +51,31 @@ Each service's `pyproject.toml` uses `package-dir = {"" = ".."}` so the service 
 
 ## AI Engine — Models
 
-Uses **Qwen2-Audio** (`qwen-audio-turbo` / `qwen-audio-max`), NOT Qwen3-ASR-Flash.
+Uses **Qwen3.5-Omni-Flash** (`qwen3.5-omni-flash`) on the **international endpoint** (`https://dashscope-intl.aliyuncs.com/api/v1`). The CN endpoint (`dashscope.aliyuncs.com`) does NOT have this model.
 Default models are configured via env vars `VINA_MODEL_SCRIBE` / `VINA_MODEL_CLINICAL`.
 The `docs/ai_model.md` doc describes Qwen3 models — the implementation has NOT been updated to those yet.
+
+## Git Workflow
+
+**Always use GitButler CLI (`but`)** for all Git operations. Never run `docker`/`docker-compose` directly on remote servers or do manual deployments.
+
+```bash
+# Standard workflow (ALWAYS follow this sequence):
+but branch new <branch-name>           # Create branch
+but stage <file-id> <branch-name>     # Stage files (use IDs from but status -f)
+but commit <branch-name> -m "msg"      # Commit
+but push <branch-name>                 # Push to remote
+# If but pr fails (no authenticated forge), use gh CLI:
+gh pr create --title "..." --base main --head <branch-name> --repo sotaworksvn/vina-doctor
+gh pr merge <pr-number> --squash --auto --delete-branch --repo sotaworksvn/vina-doctor
+```
+
+**Do NOT:**
+- `ssh` into remote server and run `docker` commands directly
+- Manually `git pull`, `docker build`, `docker compose up -d` on the server
+- Bypass CI/CD pipeline for deployments
+
+**Remote server SSH:** `ssh -i ~/.ssh/vina-doctor-key.pem root@47.238.224.19`
 
 ## Backend — Database
 
