@@ -38,7 +38,7 @@ class RetryConsultationUseCase:
         )
 
         asyncio.create_task(
-            self._orchestrator.run(consultation_id, model="qwen-audio-turbo")
+            self._orchestrator.run(consultation_id, model="qwen3.5-omni-flash")
         )
 
         return await self._consultation_repo.get_by_id(consultation_id)
