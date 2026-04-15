@@ -22,7 +22,11 @@ from ai_engine.infrastructure.vad.voice_activity_detector import (
     VADError,
     VoiceActivityDetector,
 )
-from ai_engine.processors.audio import AudioProcessingError, validate_and_convert
+from ai_engine.processors.audio import (
+    AudioProcessingError,
+    validate_and_convert,
+    split_audio_at_silence,
+)
 
 
 class ProcessConsultationError(Exception):
@@ -138,11 +142,29 @@ class ProcessConsultationUseCase:
             self._fail(session_id, str(exc))
             raise ProcessConsultationError(str(exc)) from exc
 
-        # Step 3: Scribe Agent — audio → transcript
+        # Step 2b: Split long audio into ≤5-min chunks (ASR model limit).
+        chunks = split_audio_at_silence(ready_path, work_dir)
+
+        # Step 3: Scribe Agent — audio → transcript (one call per chunk)
         self._update_state(session_id, PipelineStatus.TRANSCRIBING, "scribe_agent")
         scribe_model = model or self._model_selector.select("scribe")
         try:
-            scribe_result = self._scribe.transcribe(ready_path, model=scribe_model)
+            if len(chunks) == 1:
+                scribe_result = self._scribe.transcribe(chunks[0], model=scribe_model)
+            else:
+                # Transcribe each chunk and merge into a single ScribeResult.
+                all_turns = []
+                last_session_info = None
+                for chunk_path in chunks:
+                    partial = self._scribe.transcribe(chunk_path, model=scribe_model)
+                    all_turns.extend(partial.transcript)
+                    last_session_info = partial.session_info
+                from ai_engine.domain.entities import ScribeResult  # noqa: PLC0415
+
+                scribe_result = ScribeResult(
+                    session_info=last_session_info,
+                    transcript=all_turns,
+                )
         except ScribeAgentError as exc:
             self._fail(session_id, str(exc))
             raise ProcessConsultationError(f"Scribe agent failed: {exc}") from exc

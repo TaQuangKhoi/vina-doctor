@@ -8,24 +8,32 @@ import { useAudioUpload } from "../hooks/useAudioUpload";
 
 const MODELS = [
   {
-    id: "qwen-audio-turbo",
+    id: "qwen3-asr-flash",
     label: "Optimized Speed",
     description: "Real-time transcription for busy walk-ins. Low latency response.",
     icon: "⚡",
   },
   {
-    id: "qwen-audio-max",
+    id: "qwen3.5-omni-flash",
     label: "Maximum Accuracy",
     description: "Deep clinical reasoning. Best for complex diagnostic recordings.",
     icon: "🎯",
   },
 ];
 
+const PREFERRED_MODEL_KEY = "preferred_model";
+const DEFAULT_MODEL = "qwen3-asr-flash";
+
+function getInitialModel(): string {
+  if (typeof window === "undefined") return DEFAULT_MODEL;
+  return localStorage.getItem(PREFERRED_MODEL_KEY) ?? DEFAULT_MODEL;
+}
+
 export function NewConsultationPage() {
   const router = useRouter();
   const upload = useAudioUpload();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [model, setModel] = useState("qwen-audio-turbo");
+  const [model, setModel] = useState<string>(getInitialModel);
 
   async function handleSubmit() {
     if (!selectedFile) return;

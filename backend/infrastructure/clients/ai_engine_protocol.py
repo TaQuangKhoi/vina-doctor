@@ -12,7 +12,7 @@ class AiEngineClientProtocol(Protocol):
         self,
         audio_bytes: bytes,
         filename: str,
-        model: str = "qwen-audio-turbo",
+        model: str = "qwen3-asr-flash",
     ) -> SOAPReport: ...
 
     async def update_dashscope_key(self, api_key: str) -> None:

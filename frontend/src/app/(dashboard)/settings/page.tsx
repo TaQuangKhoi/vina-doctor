@@ -5,11 +5,35 @@ import { Card, Button, Input } from "@/shared/components";
 import { useToast } from "@/shared/components/ToastContext";
 import { useUpdateApiKey } from "@/features/settings";
 
+const PREFERRED_MODEL_KEY = "preferred_model";
+const DEFAULT_MODEL = "qwen3-asr-flash";
+
+const AI_MODELS = [
+  {
+    id: "qwen3-asr-flash",
+    label: "Optimized Speed",
+    description: "Real-time transcription for busy walk-ins.",
+    icon: "⚡",
+  },
+  {
+    id: "qwen3.5-omni-flash",
+    label: "Maximum Accuracy",
+    description: "Deep clinical reasoning. Best for complex cases.",
+    icon: "🎯",
+  },
+];
+
+function getStoredModel(): string {
+  if (typeof window === "undefined") return DEFAULT_MODEL;
+  return localStorage.getItem(PREFERRED_MODEL_KEY) ?? DEFAULT_MODEL;
+}
+
 export default function SettingsPage() {
   const { showSuccess, showError } = useToast();
   const { mutate: updateKey, isPending } = useUpdateApiKey();
 
   const [apiKey, setApiKey] = useState("");
+  const [preferredModel, setPreferredModel] = useState<string>(getStoredModel);
 
   function handleApiKeySubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,6 +52,11 @@ export default function SettingsPage() {
         },
       },
     );
+  }
+
+  function handleSavePreferences() {
+    localStorage.setItem(PREFERRED_MODEL_KEY, preferredModel);
+    showSuccess("Preferences saved.");
   }
 
   return (
@@ -88,30 +117,22 @@ export default function SettingsPage() {
           AI Model Preference
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <button
-            type="button"
-            className="flex flex-col gap-2 rounded-2xl bg-surface-lowest p-5 text-left ring-2 ring-primary-container shadow-[var(--shadow-ambient)]"
-          >
-            <span className="text-2xl">⚡</span>
-            <p className="text-sm font-semibold text-on-surface">
-              Optimized Speed
-            </p>
-            <p className="text-xs text-on-surface-variant">
-              Real-time transcription for busy walk-ins.
-            </p>
-          </button>
-          <button
-            type="button"
-            className="flex flex-col gap-2 rounded-2xl bg-surface-low p-5 text-left hover:bg-surface-lowest"
-          >
-            <span className="text-2xl">🎯</span>
-            <p className="text-sm font-semibold text-on-surface">
-              Maximum Accuracy
-            </p>
-            <p className="text-xs text-on-surface-variant">
-              Deep clinical reasoning. Best for complex cases.
-            </p>
-          </button>
+          {AI_MODELS.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => setPreferredModel(m.id)}
+              className={`flex flex-col gap-2 rounded-2xl p-5 text-left transition-all ${
+                preferredModel === m.id
+                  ? "bg-surface-lowest ring-2 ring-primary-container shadow-[var(--shadow-ambient)]"
+                  : "bg-surface-low hover:bg-surface-lowest"
+              }`}
+            >
+              <span className="text-2xl">{m.icon}</span>
+              <p className="text-sm font-semibold text-on-surface">{m.label}</p>
+              <p className="text-xs text-on-surface-variant">{m.description}</p>
+            </button>
+          ))}
         </div>
       </Card>
 
@@ -141,8 +162,8 @@ export default function SettingsPage() {
       </Card>
 
       <div className="flex justify-end gap-3">
-        <Button variant="secondary">Discard</Button>
-        <Button>Save Changes</Button>
+        <Button variant="secondary" onClick={() => setPreferredModel(getStoredModel())}>Discard</Button>
+        <Button onClick={handleSavePreferences}>Save Changes</Button>
       </div>
     </div>
   );

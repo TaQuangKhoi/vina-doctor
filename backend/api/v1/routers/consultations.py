@@ -51,7 +51,7 @@ def _to_response(c: Consultation) -> ConsultationResponse:
 )
 async def create_consultation(
     file: UploadFile,
-    model: str = Query(default="qwen-audio-turbo"),
+    model: str = Query(default="qwen3-asr-flash"),
     doctor_id: UUID = Depends(get_current_user_id),
     use_case: CreateConsultationUseCase = Depends(get_create_consultation_use_case),
 ) -> ConsultationResponse:

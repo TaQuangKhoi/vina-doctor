@@ -11,11 +11,12 @@ class ModelSelector:
     """
 
     _DEFAULTS: dict[str, str] = {
-        "scribe": "qwen3.5-omni-flash",
+        "asr": "qwen3-asr-flash",
+        "scribe": "qwen3-asr-flash",
         "clinical": "qwen3.5-omni-flash",
         "clinical_complex": "qwen3.5-omni-flash",
     }
 
     def select(self, task: str) -> str:
         env_key = f"VINA_MODEL_{task.upper()}"
-        return os.environ.get(env_key) or self._DEFAULTS.get(task, "qwen-audio-turbo")
+        return os.environ.get(env_key) or self._DEFAULTS.get(task, "qwen3-asr-flash")

@@ -19,6 +19,7 @@ from ai_engine.application.use_cases.process_consultation_use_case import (
 from ai_engine.application.use_cases.update_api_key_use_case import UpdateApiKeyUseCase
 from ai_engine.api.v1.routers.consultations import router as consultations_router
 from ai_engine.api.v1.routers.config import router as config_router
+from ai_engine.infrastructure.clients.qwen_asr_client import QwenAsrClient
 from ai_engine.infrastructure.clients.qwen_audio_client import QwenAudioClient
 from ai_engine.infrastructure.config.file_config_repository import FileConfigRepository
 from ai_engine.infrastructure.model_selector import ModelSelector
@@ -111,7 +112,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Multi-agent pipeline use case
     _consultation_use_case = ProcessConsultationUseCase(
         vad=vad,
-        scribe=ScribeAgent(client=QwenAudioClient()),
+        scribe=ScribeAgent(client=QwenAudioClient(), asr_client=QwenAsrClient()),
         clinical=ClinicalAgent(client=QwenAudioClient()),
         text_cleaner=TextCleanerService(),
         model_selector=ModelSelector(),

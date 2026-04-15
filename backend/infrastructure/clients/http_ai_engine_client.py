@@ -16,7 +16,7 @@ class HttpAiEngineClient:
         self,
         audio_bytes: bytes,
         filename: str,
-        model: str = "qwen-audio-turbo",
+        model: str = "qwen3-asr-flash",
     ) -> SOAPReport:
         url = f"{self._base_url}/v1/consultations/process"
         async with httpx.AsyncClient(timeout=self._timeout) as client:
