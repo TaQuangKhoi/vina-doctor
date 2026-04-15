@@ -179,7 +179,7 @@ export default function SettingsPage() {
   const isPresetSelected = PRESET_MODELS.some((m) => m.id === effectiveModel);
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 sm:max-w-4xl lg:max-w-5xl xl:max-w-6xl">
       <div>
         <h1 className="font-display text-2xl font-bold text-on-surface sm:text-3xl">
           Settings

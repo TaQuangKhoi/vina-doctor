@@ -16,7 +16,7 @@ export function DashboardPage() {
   const done = items.filter((c) => c.status === "done").length;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-8 sm:max-w-4xl lg:max-w-5xl xl:max-w-6xl">
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
