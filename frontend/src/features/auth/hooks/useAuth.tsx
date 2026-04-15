@@ -29,7 +29,12 @@ function setTokenCookie(token: string | null) {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
-    return sessionStorage.getItem(TOKEN_KEY);
+    const stored = sessionStorage.getItem(TOKEN_KEY);
+    if (stored) {
+      setTokenCookie(stored);
+      setAuthToken(stored);
+    }
+    return stored;
   });
 
   const login = useCallback(
