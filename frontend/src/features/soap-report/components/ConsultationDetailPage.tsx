@@ -5,6 +5,7 @@ import { Button, Card, StatusPill } from "@/shared/components";
 import { useConsultation } from "@/features/consultation/hooks/useConsultation";
 import { useSOAPReport } from "../hooks/useSOAPReport";
 import { SOAPReportView } from "./SOAPReportView";
+import { retryConsultation } from "@/features/consultation/api/consultation-api";
 
 export function ConsultationDetailPage({ id }: { id: string }) {
   const consultation = useConsultation(id);
@@ -87,13 +88,19 @@ export function ConsultationDetailPage({ id }: { id: string }) {
       {c?.status === "failed" && (
         <Card>
           <p className="text-sm text-on-error-container">
-            Processing failed. Please try uploading the audio again.
+            Processing failed.
           </p>
-          <Link href="/consultations/new">
-            <Button variant="secondary" className="mt-3">
-              Upload Again
-            </Button>
-          </Link>
+          <Button
+            variant="secondary"
+            className="mt-3"
+            onClick={async () => {
+              await retryConsultation(id);
+              consultation.refetch();
+            }}
+            disabled={consultation.isFetching}
+          >
+            {consultation.isFetching ? "Retrying…" : "Retry"}
+          </Button>
         </Card>
       )}
 

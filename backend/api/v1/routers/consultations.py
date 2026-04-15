@@ -9,6 +9,7 @@ from backend.api.v1.deps import (
     get_current_user_id,
     get_get_consultation_use_case,
     get_list_consultations_use_case,
+    get_retry_consultation_use_case,
 )
 from backend.api.v1.schemas.consultation import (
     ConsultationListResponse,
@@ -22,6 +23,9 @@ from backend.application.use_cases.get_consultation_use_case import (
 )
 from backend.application.use_cases.list_consultations_use_case import (
     ListConsultationsUseCase,
+)
+from backend.application.use_cases.retry_consultation_use_case import (
+    RetryConsultationUseCase,
 )
 from backend.domain.entities import Consultation
 from backend.domain.errors import AccessDeniedError, NotFoundError
@@ -77,6 +81,36 @@ async def list_consultations(
         items=[_to_response(c) for c in items],
         total=len(items),
     )
+
+
+@router.post(
+    "/{consultation_id}/retry",
+    response_model=ConsultationResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Retry a failed consultation",
+)
+async def retry_consultation(
+    consultation_id: UUID,
+    doctor_id: UUID = Depends(get_current_user_id),
+    use_case: RetryConsultationUseCase = Depends(get_retry_consultation_use_case),
+) -> ConsultationResponse:
+    try:
+        consultation = await use_case.execute(
+            consultation_id=consultation_id, doctor_id=doctor_id
+        )
+    except NotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
+    except AccessDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from exc
+    return _to_response(consultation)
 
 
 @router.get(

@@ -22,6 +22,9 @@ from backend.application.use_cases.get_report_use_case import GetReportUseCase
 from backend.application.use_cases.list_consultations_use_case import (
     ListConsultationsUseCase,
 )
+from backend.application.use_cases.retry_consultation_use_case import (
+    RetryConsultationUseCase,
+)
 from backend.core.config import get_settings
 from backend.core.security import (
     create_access_token,
@@ -140,6 +143,16 @@ def get_get_consultation_use_case(consultation_repo=Depends(get_consultation_rep
 
 def get_list_consultations_use_case(consultation_repo=Depends(get_consultation_repo)):
     return ListConsultationsUseCase(consultation_repo=consultation_repo)
+
+
+def get_retry_consultation_use_case(
+    consultation_repo=Depends(get_consultation_repo),
+    orchestrator=Depends(get_orchestrator),
+):
+    return RetryConsultationUseCase(
+        consultation_repo=consultation_repo,
+        orchestrator=orchestrator,
+    )
 
 
 def get_get_report_use_case(

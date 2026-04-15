@@ -30,3 +30,7 @@ export async function createConsultation(
     formData,
   );
 }
+
+export async function retryConsultation(id: string): Promise<ConsultationResponse> {
+  return api.post<ConsultationResponse>(`/consultations/${id}/retry`);
+}
