@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Card, Button, Input } from "@/shared/components";
+import { Button, Input } from "@/shared/components";
 import { useToast } from "@/shared/components/ToastContext";
 import {
-  PRESET_MODELS,
+  SCRIBE_PRESET_MODELS,
+  CLINICAL_PRESET_MODELS,
   TASK_LABELS,
   TASK_DESCRIPTIONS,
   DEFAULT_MODELS,
@@ -62,7 +63,8 @@ export function ModelPreferenceCard({
     save(modelId);
   }, [effectiveValue, save]);
 
-  const isPresetSelected = PRESET_MODELS.some((m) => m.id === effectiveValue);
+  const presets = task === "scribe" ? SCRIBE_PRESET_MODELS : CLINICAL_PRESET_MODELS;
+  const isPresetSelected = presets.some((m) => m.id === effectiveValue);
 
   const taskLabel = TASK_LABELS[task];
   const taskDescription = TASK_DESCRIPTIONS[task];
@@ -79,7 +81,7 @@ export function ModelPreferenceCard({
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {PRESET_MODELS.map((m) => (
+        {presets.map((m) => (
           <button
             key={m.id}
             type="button"
