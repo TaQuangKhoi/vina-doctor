@@ -4,13 +4,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, field_validator
 
 from backend.api.v1.deps import get_ai_engine_client, get_current_user_id
-from backend.infrastructure.clients.ai_engine_protocol import AiEngineClientProtocol
+from backend.infrastructure.clients.ai_engine_protocol import (
+    AiEngineClientProtocol,
+    AiEngineConfigData,
+)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
 # ---------------------------------------------------------------------------
-# Schema
+# Schemas
 # ---------------------------------------------------------------------------
 
 
@@ -23,6 +26,34 @@ class UpdateDashscopeApiKeyRequest(BaseModel):
         if not v or not v.strip():
             raise ValueError("api_key must not be blank.")
         return v.strip()
+
+
+class UpdateDashscopeUrlRequest(BaseModel):
+    base_url: str
+
+    @field_validator("base_url")
+    @classmethod
+    def must_not_be_blank(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("base_url must not be blank.")
+        return v.strip()
+
+
+class UpdateModelRequest(BaseModel):
+    task: str
+    model_id: str
+
+    @field_validator("task", "model_id")
+    @classmethod
+    def must_not_be_blank(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Field must not be blank.")
+        return v.strip()
+
+
+class ConfigResponse(BaseModel):
+    dashscope_base_url: str
+    models: dict[str, str]
 
 
 # ---------------------------------------------------------------------------
@@ -52,3 +83,77 @@ async def update_dashscope_api_key(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Failed to update API key in ai_engine: {exc}",
         ) from exc
+
+
+@router.patch(
+    "/config/dashscope-url",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Update the DashScope base URL at runtime",
+    description=(
+        "Proxies the new base URL to the AI engine service. "
+        "Use to switch between international and CN endpoints without a restart. "
+        "Requires a valid Bearer JWT."
+    ),
+)
+async def update_dashscope_url(
+    body: UpdateDashscopeUrlRequest,
+    _user_id: str = Depends(get_current_user_id),
+    ai_engine: AiEngineClientProtocol = Depends(get_ai_engine_client),
+) -> None:
+    try:
+        await ai_engine.update_dashscope_url(body.base_url)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to update DashScope URL in ai_engine: {exc}",
+        ) from exc
+
+
+@router.patch(
+    "/config/model",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Override the model ID for a pipeline task at runtime",
+    description=(
+        "Proxies a per-task model override to the AI engine service. "
+        "Valid tasks: ``scribe``, ``clinical``, ``asr``, ``clinical_complex``. "
+        "Requires a valid Bearer JWT."
+    ),
+)
+async def update_model(
+    body: UpdateModelRequest,
+    _user_id: str = Depends(get_current_user_id),
+    ai_engine: AiEngineClientProtocol = Depends(get_ai_engine_client),
+) -> None:
+    try:
+        await ai_engine.update_model(body.task, body.model_id)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to update model in ai_engine: {exc}",
+        ) from exc
+
+
+@router.get(
+    "/config",
+    response_model=ConfigResponse,
+    summary="Get current AI engine runtime configuration",
+    description=(
+        "Returns the active DashScope base URL and per-task model overrides "
+        "from the AI engine.  Requires a valid Bearer JWT."
+    ),
+)
+async def get_config(
+    _user_id: str = Depends(get_current_user_id),
+    ai_engine: AiEngineClientProtocol = Depends(get_ai_engine_client),
+) -> ConfigResponse:
+    try:
+        data: AiEngineConfigData = await ai_engine.get_config()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to fetch config from ai_engine: {exc}",
+        ) from exc
+    return ConfigResponse(
+        dashscope_base_url=data.dashscope_base_url,
+        models=data.models,
+    )

@@ -3,12 +3,18 @@
 import { useState } from "react";
 import { Card, Button, Input } from "@/shared/components";
 import { useToast } from "@/shared/components/ToastContext";
-import { useUpdateApiKey } from "@/features/settings";
+import {
+  useUpdateApiKey,
+  useUpdateDashscopeUrl,
+  useUpdateModel,
+  useAdminConfig,
+} from "@/features/settings";
 
 const PREFERRED_MODEL_KEY = "preferred_model";
 const DEFAULT_MODEL = "qwen3-asr-flash";
+const DEFAULT_DASHSCOPE_URL = "https://dashscope-intl.aliyuncs.com/api/v1";
 
-const AI_MODELS = [
+const PRESET_MODELS = [
   {
     id: "qwen3-asr-flash",
     label: "Optimized Speed",
@@ -30,10 +36,31 @@ function getStoredModel(): string {
 
 export default function SettingsPage() {
   const { showSuccess, showError } = useToast();
-  const { mutate: updateKey, isPending } = useUpdateApiKey();
 
+  const { mutate: updateKey, isPending: isKeyPending } = useUpdateApiKey();
+  const { mutate: updateUrl, isPending: isUrlPending } = useUpdateDashscopeUrl();
+  const { mutate: updateModel, isPending: isModelPending } = useUpdateModel();
+  const { data: remoteConfig, isLoading: isConfigLoading } = useAdminConfig();
+
+  // ── API Key ──────────────────────────────────────────────────────────────
   const [apiKey, setApiKey] = useState("");
-  const [preferredModel, setPreferredModel] = useState<string>(getStoredModel);
+
+  // ── DashScope base URL ───────────────────────────────────────────────────
+  // Null means "no local edit yet" — the effective value falls back to remote.
+  const [baseUrlDraft, setBaseUrlDraft] = useState<string | null>(null);
+  const effectiveBaseUrl =
+    baseUrlDraft ?? remoteConfig?.dashscope_base_url ?? DEFAULT_DASHSCOPE_URL;
+
+  // ── Model (scribe task) ──────────────────────────────────────────────────
+  // Same pattern: null = no local edit, fall back to remote config then localStorage.
+  const [preferredModelDraft, setPreferredModelDraft] = useState<string | null>(null);
+  const remoteScribeModel = remoteConfig?.models?.scribe;
+  const effectiveModel =
+    preferredModelDraft ?? remoteScribeModel ?? getStoredModel();
+
+  const [customModelId, setCustomModelId] = useState("");
+
+  // ── Handlers ─────────────────────────────────────────────────────────────
 
   function handleApiKeySubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,10 +81,71 @@ export default function SettingsPage() {
     );
   }
 
-  function handleSavePreferences() {
-    localStorage.setItem(PREFERRED_MODEL_KEY, preferredModel);
-    showSuccess("Preferences saved.");
+  function handleBaseUrlSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const url = effectiveBaseUrl.trim();
+    if (!url) return;
+    updateUrl(
+      { base_url: url },
+      {
+        onSuccess: () => showSuccess("DashScope base URL updated successfully."),
+        onError: (err) => {
+          showError(
+            err instanceof Error ? err.message : "Failed to update base URL.",
+          );
+        },
+      },
+    );
   }
+
+  function handlePresetModelClick(modelId: string) {
+    setPreferredModelDraft(modelId);
+    setCustomModelId("");
+  }
+
+  function handleCustomModelChange(value: string) {
+    setCustomModelId(value);
+    if (value.trim()) {
+      setPreferredModelDraft(value.trim());
+    }
+  }
+
+  function handleSaveModel() {
+    const modelId = effectiveModel.trim();
+    if (!modelId) return;
+
+    // Persist to localStorage immediately (used by NewConsultationPage)
+    localStorage.setItem(PREFERRED_MODEL_KEY, modelId);
+
+    // Persist both scribe and asr tasks (they share the same user-selected model)
+    const tasks = ["scribe", "asr"];
+    let completed = 0;
+
+    function onDone() {
+      completed += 1;
+      if (completed === tasks.length) {
+        showSuccess("Model preference saved.");
+      }
+    }
+
+    tasks.forEach((task) => {
+      updateModel(
+        { task, model_id: modelId },
+        {
+          onSuccess: onDone,
+          onError: (err) => {
+            showError(
+              err instanceof Error
+                ? err.message
+                : `Failed to update model for ${task}.`,
+            );
+          },
+        },
+      );
+    });
+  }
+
+  const isPresetSelected = PRESET_MODELS.some((m) => m.id === effectiveModel);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8">
@@ -113,17 +201,24 @@ export default function SettingsPage() {
 
       {/* AI Model Preference */}
       <Card>
-        <h2 className="mb-4 font-display text-lg font-semibold text-on-surface">
+        <h2 className="mb-1 font-display text-lg font-semibold text-on-surface">
           AI Model Preference
         </h2>
+        <p className="mb-4 text-sm text-on-surface-variant">
+          {isConfigLoading
+            ? "Loading current model from server…"
+            : "Select a preset or enter a custom DashScope model ID. Saved to the engine immediately."}
+        </p>
+
+        {/* Preset cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {AI_MODELS.map((m) => (
+          {PRESET_MODELS.map((m) => (
             <button
               key={m.id}
               type="button"
-              onClick={() => setPreferredModel(m.id)}
+              onClick={() => handlePresetModelClick(m.id)}
               className={`flex flex-col gap-2 rounded-2xl p-5 text-left transition-all ${
-                preferredModel === m.id
+                effectiveModel === m.id
                   ? "bg-surface-lowest ring-2 ring-primary-container shadow-[var(--shadow-ambient)]"
                   : "bg-surface-low hover:bg-surface-lowest"
               }`}
@@ -131,21 +226,81 @@ export default function SettingsPage() {
               <span className="text-2xl">{m.icon}</span>
               <p className="text-sm font-semibold text-on-surface">{m.label}</p>
               <p className="text-xs text-on-surface-variant">{m.description}</p>
+              <p className="mt-1 font-mono text-xs text-on-surface-variant opacity-70">
+                {m.id}
+              </p>
             </button>
           ))}
         </div>
+
+        {/* Custom model ID */}
+        <div className="mt-4">
+          <Input
+            label="Custom Model ID (optional)"
+            placeholder="e.g. qwen3-asr-turbo"
+            value={customModelId}
+            onChange={(e) => handleCustomModelChange(e.target.value)}
+          />
+          {!isPresetSelected && effectiveModel && (
+            <p className="mt-1 text-xs text-on-surface-variant">
+              Active: <span className="font-mono">{effectiveModel}</span>
+            </p>
+          )}
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <Button
+            onClick={handleSaveModel}
+            disabled={isModelPending || !effectiveModel.trim()}
+          >
+            {isModelPending ? "Saving…" : "Save Model"}
+          </Button>
+        </div>
       </Card>
 
-      {/* AI Engine API Key */}
+      {/* AI Engine Configuration */}
       <Card>
         <h2 className="mb-1 font-display text-lg font-semibold text-on-surface">
-          AI Engine API Key
+          AI Engine Configuration
         </h2>
-        <p className="mb-4 text-sm text-on-surface-variant">
-          Update the DashScope API key used by the AI engine. The new key
-          takes effect immediately — no restart required.
+        <p className="mb-6 text-sm text-on-surface-variant">
+          Runtime settings for the AI engine. Changes take effect immediately —
+          no restart required.
         </p>
-        <form onSubmit={handleApiKeySubmit} className="flex flex-col gap-4">
+
+        {/* DashScope base URL */}
+        <form onSubmit={handleBaseUrlSubmit} className="mb-6 flex flex-col gap-4">
+          <Input
+            label="DashScope Base URL"
+            placeholder={DEFAULT_DASHSCOPE_URL}
+            value={effectiveBaseUrl}
+            onChange={(e) => setBaseUrlDraft(e.target.value)}
+          />
+          <p className="text-xs text-on-surface-variant">
+            International:{" "}
+            <span className="font-mono">
+              https://dashscope-intl.aliyuncs.com/api/v1
+            </span>
+            {"  |  "}
+            CN:{" "}
+            <span className="font-mono">
+              https://dashscope.aliyuncs.com/api/v1
+            </span>
+          </p>
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              disabled={isUrlPending || !effectiveBaseUrl.trim()}
+            >
+              {isUrlPending ? "Saving…" : "Save URL"}
+            </Button>
+          </div>
+        </form>
+
+        <hr className="border-outline-variant" />
+
+        {/* DashScope API key */}
+        <form onSubmit={handleApiKeySubmit} className="mt-6 flex flex-col gap-4">
           <Input
             label="DashScope API Key"
             type="password"
@@ -154,17 +309,12 @@ export default function SettingsPage() {
             onChange={(e) => setApiKey(e.target.value)}
           />
           <div className="flex justify-end">
-            <Button type="submit" disabled={isPending || !apiKey.trim()}>
-              {isPending ? "Saving…" : "Save API Key"}
+            <Button type="submit" disabled={isKeyPending || !apiKey.trim()}>
+              {isKeyPending ? "Saving…" : "Save API Key"}
             </Button>
           </div>
         </form>
       </Card>
-
-      <div className="flex justify-end gap-3">
-        <Button variant="secondary" onClick={() => setPreferredModel(getStoredModel())}>Discard</Button>
-        <Button onClick={handleSavePreferences}>Save Changes</Button>
-      </div>
     </div>
   );
 }

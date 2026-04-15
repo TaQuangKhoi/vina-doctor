@@ -21,7 +21,7 @@ export async function getConsultation(
 
 export async function createConsultation(
   file: File,
-  model = "qwen-audio-turbo",
+  model = "qwen3-asr-flash",
 ): Promise<ConsultationResponse> {
   const formData = new FormData();
   formData.append("file", file);

@@ -3,6 +3,7 @@ from __future__ import annotations
 import httpx
 
 from backend.domain.entities import Medication, MultilingualText, SOAPReport
+from backend.infrastructure.clients.ai_engine_protocol import AiEngineConfigData
 
 
 class HttpAiEngineClient:
@@ -36,6 +37,34 @@ class HttpAiEngineClient:
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.patch(url, json={"api_key": api_key})
             response.raise_for_status()
+
+    async def update_dashscope_url(self, base_url: str) -> None:
+        """Forward a new DashScope base URL to ai_engine via PATCH /v1/config/dashscope-url."""
+        url = f"{self._base_url}/v1/config/dashscope-url"
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.patch(url, json={"base_url": base_url})
+            response.raise_for_status()
+
+    async def update_model(self, task: str, model_id: str) -> None:
+        """Forward a per-task model override to ai_engine via PATCH /v1/config/model."""
+        url = f"{self._base_url}/v1/config/model"
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.patch(
+                url, json={"task": task, "model_id": model_id}
+            )
+            response.raise_for_status()
+
+    async def get_config(self) -> AiEngineConfigData:
+        """Fetch current runtime config from ai_engine via GET /v1/config."""
+        url = f"{self._base_url}/v1/config"
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            data = response.json()
+        return AiEngineConfigData(
+            dashscope_base_url=data.get("dashscope_base_url", ""),
+            models=data.get("models", {}),
+        )
 
 
 def _map_response_to_soap(data: dict) -> SOAPReport:

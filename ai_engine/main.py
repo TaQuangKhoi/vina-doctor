@@ -17,11 +17,18 @@ from ai_engine.application.use_cases.process_consultation_use_case import (
     ProcessConsultationUseCase,
 )
 from ai_engine.application.use_cases.update_api_key_use_case import UpdateApiKeyUseCase
+from ai_engine.application.use_cases.update_dashscope_url_use_case import (
+    UpdateDashscopeUrlUseCase,
+)
+from ai_engine.application.use_cases.update_model_use_case import UpdateModelUseCase
 from ai_engine.api.v1.routers.consultations import router as consultations_router
 from ai_engine.api.v1.routers.config import router as config_router
 from ai_engine.infrastructure.clients.qwen_asr_client import QwenAsrClient
 from ai_engine.infrastructure.clients.qwen_audio_client import QwenAudioClient
-from ai_engine.infrastructure.config.file_config_repository import FileConfigRepository
+from ai_engine.infrastructure.config.file_config_repository import (
+    DEFAULT_DASHSCOPE_URL,
+    FileConfigRepository,
+)
 from ai_engine.infrastructure.model_selector import ModelSelector
 from ai_engine.infrastructure.state_tracker import InMemoryPipelineStateTracker
 from ai_engine.infrastructure.vad.voice_activity_detector import VoiceActivityDetector
@@ -33,6 +40,9 @@ from ai_engine.processors.text_cleaner import TextCleanerService
 _use_case: ProcessAudioUseCase | None = None
 _consultation_use_case: ProcessConsultationUseCase | None = None
 _update_api_key_use_case: UpdateApiKeyUseCase | None = None
+_update_dashscope_url_use_case: UpdateDashscopeUrlUseCase | None = None
+_update_model_use_case: UpdateModelUseCase | None = None
+_config_repo: FileConfigRepository | None = None
 
 
 def get_process_audio_use_case() -> ProcessAudioUseCase:
@@ -62,6 +72,33 @@ def get_update_api_key_use_case() -> UpdateApiKeyUseCase:
     return _update_api_key_use_case
 
 
+def get_update_dashscope_url_use_case() -> UpdateDashscopeUrlUseCase:
+    """Return the singleton UpdateDashscopeUrlUseCase; raises if not yet initialised."""
+    if _update_dashscope_url_use_case is None:
+        raise RuntimeError(
+            "Application has not been initialised. Call create_app() first."
+        )
+    return _update_dashscope_url_use_case
+
+
+def get_update_model_use_case() -> UpdateModelUseCase:
+    """Return the singleton UpdateModelUseCase; raises if not yet initialised."""
+    if _update_model_use_case is None:
+        raise RuntimeError(
+            "Application has not been initialised. Call create_app() first."
+        )
+    return _update_model_use_case
+
+
+def get_config_repo() -> FileConfigRepository:
+    """Return the singleton FileConfigRepository; raises if not yet initialised."""
+    if _config_repo is None:
+        raise RuntimeError(
+            "Application has not been initialised. Call create_app() first."
+        )
+    return _config_repo
+
+
 # ---------------------------------------------------------------------------
 # App factory
 # ---------------------------------------------------------------------------
@@ -71,14 +108,20 @@ def get_update_api_key_use_case() -> UpdateApiKeyUseCase:
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Wire dependencies on startup; nothing to tear down for MVP."""
     global _use_case, _consultation_use_case, _update_api_key_use_case  # noqa: PLW0603
+    global _update_dashscope_url_use_case, _update_model_use_case, _config_repo  # noqa: PLW0603
 
     load_dotenv()
+
+    # ------------------------------------------------------------------
+    # Bootstrap config repository (shared across all use cases).
+    # ------------------------------------------------------------------
+    config_repo = FileConfigRepository()
+    _config_repo = config_repo
 
     # ------------------------------------------------------------------
     # Resolve the DashScope API key.
     # Priority: 1) persisted runtime file  2) DASHSCOPE_API_KEY env var
     # ------------------------------------------------------------------
-    config_repo = FileConfigRepository()
     api_key = config_repo.get_dashscope_key() or os.environ.get("DASHSCOPE_API_KEY")
     if not api_key:
         raise EnvironmentError(
@@ -87,20 +130,32 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             "PATCH /v1/config/dashscope-api-key after startup."
         )
     dashscope.api_key = api_key
-    dashscope.base_http_api_url = "https://dashscope-intl.aliyuncs.com/api/v1"
 
     # ------------------------------------------------------------------
-    # Runtime config use case — apply_key is a closure that mutates the
-    # dashscope module global so UpdateApiKeyUseCase stays infra-free.
+    # Resolve the DashScope base URL.
+    # Priority: 1) persisted runtime file  2) DEFAULT_DASHSCOPE_URL
+    # ------------------------------------------------------------------
+    base_url = config_repo.get_dashscope_url() or DEFAULT_DASHSCOPE_URL
+    dashscope.base_http_api_url = base_url
+
+    # ------------------------------------------------------------------
+    # Runtime config use cases — apply_* closures mutate dashscope module
+    # globals so use cases stay infra-free.
     # ------------------------------------------------------------------
     _update_api_key_use_case = UpdateApiKeyUseCase(
         config_repo=config_repo,
         apply_key=lambda k: setattr(dashscope, "api_key", k),
     )
+    _update_dashscope_url_use_case = UpdateDashscopeUrlUseCase(
+        config_repo=config_repo,
+        apply_url=lambda u: setattr(dashscope, "base_http_api_url", u),
+    )
+    _update_model_use_case = UpdateModelUseCase(config_repo=config_repo)
 
-    # Shared infrastructure
+    # Shared infrastructure — ModelSelector now reads runtime overrides first
     client = QwenAudioClient()
     vad = VoiceActivityDetector()
+    model_selector = ModelSelector(config_repo=config_repo)
 
     # Legacy single-pipeline use case (backward compat)
     _use_case = ProcessAudioUseCase(
@@ -115,7 +170,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         scribe=ScribeAgent(client=QwenAudioClient(), asr_client=QwenAsrClient()),
         clinical=ClinicalAgent(client=QwenAudioClient()),
         text_cleaner=TextCleanerService(),
-        model_selector=ModelSelector(),
+        model_selector=model_selector,
         state_tracker=InMemoryPipelineStateTracker(),
         unified_use_case=_use_case,
     )

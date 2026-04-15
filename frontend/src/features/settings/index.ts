@@ -1,3 +1,17 @@
 export { useUpdateApiKey } from "./hooks/useUpdateApiKey";
-export { updateDashscopeApiKey } from "./api/settings-api";
-export type { UpdateApiKeyRequest } from "./types";
+export { useUpdateDashscopeUrl } from "./hooks/useUpdateDashscopeUrl";
+export { useUpdateModel } from "./hooks/useUpdateModel";
+export { useAdminConfig } from "./hooks/useAdminConfig";
+export {
+  updateDashscopeApiKey,
+  updateDashscopeUrl,
+  updateModel,
+  getAdminConfig,
+} from "./api/settings-api";
+export type {
+  UpdateApiKeyRequest,
+  UpdateDashscopeUrlRequest,
+  UpdateModelRequest,
+  AdminConfigResponse,
+} from "./types";
+

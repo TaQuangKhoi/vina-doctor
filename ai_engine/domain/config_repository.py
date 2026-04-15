@@ -17,3 +17,23 @@ class ConfigRepositoryProtocol(Protocol):
     def set_dashscope_key(self, key: str) -> None:
         """Persist *key* as the new DashScope API key."""
         ...
+
+    def get_dashscope_url(self) -> str | None:
+        """Return the persisted DashScope base HTTP API URL, or *None* if not set."""
+        ...
+
+    def set_dashscope_url(self, url: str) -> None:
+        """Persist *url* as the DashScope base HTTP API URL."""
+        ...
+
+    def get_model(self, task: str) -> str | None:
+        """Return the persisted model ID for *task*, or *None* if not overridden."""
+        ...
+
+    def set_model(self, task: str, model_id: str) -> None:
+        """Persist *model_id* as the runtime override for *task*."""
+        ...
+
+    def get_all_config(self) -> dict:
+        """Return a dict of all persisted configuration values."""
+        ...

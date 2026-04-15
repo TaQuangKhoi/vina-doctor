@@ -5,6 +5,8 @@ import os
 import tempfile
 from pathlib import Path
 
+DEFAULT_DASHSCOPE_URL = "https://dashscope-intl.aliyuncs.com/api/v1"
+
 
 class FileConfigRepository:
     """Infrastructure implementation of ConfigRepositoryProtocol.
@@ -14,9 +16,22 @@ class FileConfigRepository:
     ``os.replace`` ensures the reader never sees a partial write.
 
     The directory is created on first write if it does not yet exist.
+
+    JSON schema::
+
+        {
+          "dashscope_api_key": "sk-...",
+          "dashscope_base_url": "https://dashscope-intl.aliyuncs.com/api/v1",
+          "models": {
+            "scribe": "qwen3-asr-flash",
+            "clinical": "qwen3.5-omni-flash"
+          }
+        }
     """
 
     _KEY_DASHSCOPE = "dashscope_api_key"
+    _KEY_BASE_URL = "dashscope_base_url"
+    _KEY_MODELS = "models"
 
     def __init__(self, path: str | Path = "/app/config/runtime.json") -> None:
         self._path = Path(path)
@@ -38,6 +53,48 @@ class FileConfigRepository:
         data = self._read()
         data[self._KEY_DASHSCOPE] = key.strip()
         self._write(data)
+
+    def get_dashscope_url(self) -> str | None:
+        """Return the persisted DashScope base URL, or *None* if not overridden."""
+        data = self._read()
+        value = data.get(self._KEY_BASE_URL)
+        return value if isinstance(value, str) and value else None
+
+    def set_dashscope_url(self, url: str) -> None:
+        """Atomically persist *url* as the DashScope base HTTP API URL."""
+        if not url or not url.strip():
+            raise ValueError("DashScope base URL must not be empty.")
+        data = self._read()
+        data[self._KEY_BASE_URL] = url.strip()
+        self._write(data)
+
+    def get_model(self, task: str) -> str | None:
+        """Return the persisted model ID for *task*, or *None* if not overridden."""
+        data = self._read()
+        models = data.get(self._KEY_MODELS)
+        if not isinstance(models, dict):
+            return None
+        value = models.get(task)
+        return value if isinstance(value, str) and value else None
+
+    def set_model(self, task: str, model_id: str) -> None:
+        """Atomically persist *model_id* as the runtime override for *task*."""
+        if not task or not task.strip():
+            raise ValueError("Task must not be empty.")
+        if not model_id or not model_id.strip():
+            raise ValueError("Model ID must not be empty.")
+        data = self._read()
+        models = data.setdefault(self._KEY_MODELS, {})
+        models[task.strip()] = model_id.strip()
+        self._write(data)
+
+    def get_all_config(self) -> dict:
+        """Return a dict of all persisted configuration values (key redacted)."""
+        data = self._read()
+        return {
+            "dashscope_base_url": data.get(self._KEY_BASE_URL) or DEFAULT_DASHSCOPE_URL,
+            "models": data.get(self._KEY_MODELS) or {},
+        }
 
     # ------------------------------------------------------------------
     # Internal helpers
