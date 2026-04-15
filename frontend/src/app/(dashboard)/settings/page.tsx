@@ -8,6 +8,8 @@ import {
   useUpdateDashscopeUrl,
   useUpdateModel,
   useAdminConfig,
+  useUserProfile,
+  useUpdateUserProfile,
 } from "@/features/settings";
 
 const PREFERRED_MODEL_KEY = "preferred_model";
@@ -41,6 +43,35 @@ export default function SettingsPage() {
   const { mutate: updateUrl, isPending: isUrlPending } = useUpdateDashscopeUrl();
   const { mutate: updateModel, isPending: isModelPending } = useUpdateModel();
   const { data: remoteConfig, isLoading: isConfigLoading } = useAdminConfig();
+
+  // ── Doctor Profile ──────────────────────────────────────────────────────────
+  const { data: profile, isLoading: isProfileLoading } = useUserProfile();
+  const { mutate: updateProfile, isPending: isProfilePending } = useUpdateUserProfile();
+
+  const [fullName, setFullName] = useState("");
+  const [specialty, setSpecialty] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
+  const [phone, setPhone] = useState("");
+
+  // Sync local state with fetched profile once loaded
+  if (profile && fullName === "" && specialty === "" && licenseNumber === "" && phone === "") {
+    setFullName(profile.full_name);
+    setSpecialty(profile.specialty);
+    setLicenseNumber(profile.license_number);
+    setPhone(profile.phone);
+  }
+
+  function handleProfileSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    updateProfile(
+      { full_name: fullName, specialty, license_number: licenseNumber, phone },
+      {
+        onSuccess: () => showSuccess("Doctor profile saved."),
+        onError: (err) =>
+          showError(err instanceof Error ? err.message : "Failed to save profile."),
+      },
+    );
+  }
 
   // ── API Key ──────────────────────────────────────────────────────────────
   const [apiKey, setApiKey] = useState("");
@@ -158,16 +189,46 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Profile */}
+      {/* Doctor Profile */}
       <Card>
         <h2 className="mb-4 font-display text-lg font-semibold text-on-surface">
           Doctor Profile
         </h2>
-        <div className="flex flex-col gap-4">
-          <Input label="Full Name" placeholder="Dr. Nguyen Van A" />
-          <Input label="Specialty" placeholder="General Practice" />
-          <Input label="License Number" placeholder="GP-12345" />
-        </div>
+        {isProfileLoading ? (
+          <p className="text-sm text-on-surface-variant">Loading profile…</p>
+        ) : (
+          <form onSubmit={handleProfileSubmit} className="flex flex-col gap-4">
+            <Input
+              label="Full Name"
+              placeholder="Dr. Nguyen Van A"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+            />
+            <Input
+              label="Specialty"
+              placeholder="General Practice"
+              value={specialty}
+              onChange={(e) => setSpecialty(e.target.value)}
+            />
+            <Input
+              label="License Number"
+              placeholder="GP-12345"
+              value={licenseNumber}
+              onChange={(e) => setLicenseNumber(e.target.value)}
+            />
+            <Input
+              label="Phone"
+              placeholder="+84 90 123 4567"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+            <div className="flex justify-end">
+              <Button type="submit" disabled={isProfilePending}>
+                {isProfilePending ? "Saving…" : "Save Profile"}
+              </Button>
+            </div>
+          </form>
+        )}
       </Card>
 
       {/* Language */}

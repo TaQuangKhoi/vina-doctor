@@ -23,6 +23,9 @@ class User(BaseModel):
     email: str
     hashed_password: str
     full_name: str
+    specialty: str = ""
+    license_number: str = ""
+    phone: str = ""
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     model_config = {"frozen": True}

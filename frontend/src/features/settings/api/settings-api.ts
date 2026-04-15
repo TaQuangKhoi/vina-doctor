@@ -1,10 +1,29 @@
 import { api } from "@/shared/lib/api-client";
+import type { UserProfile, UserProfileUpdateRequest } from "@/shared/types/api";
 import type {
   AdminConfigResponse,
   UpdateApiKeyRequest,
   UpdateDashscopeUrlRequest,
   UpdateModelRequest,
 } from "@/features/settings/types";
+
+/**
+ * GET /api/v1/users/me
+ * Fetches the current doctor's profile.
+ */
+export async function getUserProfile(): Promise<UserProfile> {
+  return api.get<UserProfile>("/users/me");
+}
+
+/**
+ * PATCH /api/v1/users/me
+ * Updates the current doctor's profile fields.
+ */
+export async function updateUserProfile(
+  payload: UserProfileUpdateRequest,
+): Promise<UserProfile> {
+  return api.patch<UserProfile>("/users/me", payload);
+}
 
 /**
  * POST /api/v1/admin/config/dashscope-api-key

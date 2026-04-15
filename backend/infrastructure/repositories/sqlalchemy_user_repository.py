@@ -41,6 +41,18 @@ class SqlAlchemyUserRepository(UserRepository):
         model = result.scalar_one_or_none()
         return _to_entity(model) if model else None
 
+    async def update(self, user: User) -> User:
+        model = await self._session.get(UserModel, user.id)
+        if model is None:
+            raise NotFoundError("User", user.id)
+        model.full_name = user.full_name
+        model.specialty = user.specialty or None
+        model.license_number = user.license_number or None
+        model.phone = user.phone or None
+        await self._session.commit()
+        await self._session.refresh(model)
+        return _to_entity(model)
+
 
 def _to_entity(model: UserModel) -> User:
     return User(
@@ -48,5 +60,8 @@ def _to_entity(model: UserModel) -> User:
         email=model.email,
         hashed_password=model.hashed_password,
         full_name=model.full_name,
+        specialty=model.specialty or "",
+        license_number=model.license_number or "",
+        phone=model.phone or "",
         created_at=model.created_at,
     )

@@ -14,6 +14,7 @@ from backend.api.v1.routers.admin import router as admin_router
 from backend.api.v1.routers.auth import router as auth_router
 from backend.api.v1.routers.consultations import router as consultations_router
 from backend.api.v1.routers.reports import router as reports_router
+from backend.api.v1.routers.users import router as users_router
 
 
 @asynccontextmanager
@@ -67,6 +68,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router, prefix=prefix)
     app.include_router(consultations_router, prefix=prefix)
     app.include_router(reports_router, prefix=prefix)
+    app.include_router(users_router, prefix=prefix)
 
     return app
 

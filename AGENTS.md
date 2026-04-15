@@ -68,9 +68,12 @@ but stage <file-id> <branch-name>     # Stage files (use IDs from but status -f)
 but commit <branch-name> -m "msg"      # Commit
 but push <branch-name>                 # Push to remote
 # If but pr fails (no authenticated forge), use gh CLI:
-gh pr create --title "..." --base main --head <branch-name> --repo sotaworksvn/vina-doctor
+gh pr create --title "..." --body "..." --base main --head <branch-name> --repo sotaworksvn/vina-doctor
+# Wait for CI to pass, then merge automatically:
 gh pr merge <pr-number> --squash --auto --delete-branch --repo sotaworksvn/vina-doctor
 ```
+
+**After pushing and creating a PR, always wait for CI to pass then merge automatically. Do NOT leave PRs for manual merge.**
 
 **Do NOT:**
 - `ssh` into remote server and run `docker` commands directly

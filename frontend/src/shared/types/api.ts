@@ -62,3 +62,20 @@ export interface ReportResponse {
 export interface ApiError {
   detail: string;
 }
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  full_name: string;
+  specialty: string;
+  license_number: string;
+  phone: string;
+  created_at: string;
+}
+
+export interface UserProfileUpdateRequest {
+  full_name?: string;
+  specialty?: string;
+  license_number?: string;
+  phone?: string;
+}
