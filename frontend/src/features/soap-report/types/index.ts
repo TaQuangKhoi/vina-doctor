@@ -5,4 +5,4 @@ export type {
   Medication,
 } from "@/shared/types/api";
 
-export type ReportLanguage = "vn" | "en" | "fr";
+export type ReportLanguage = "vn" | "en" | "fr" | "ar";

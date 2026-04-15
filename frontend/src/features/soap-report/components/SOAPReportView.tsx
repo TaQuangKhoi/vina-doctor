@@ -9,6 +9,7 @@ const LANG_LABELS: Record<ReportLanguage, string> = {
   vn: "Tiếng Việt",
   en: "English",
   fr: "Français",
+  ar: "العربية",
 };
 
 function getText(
