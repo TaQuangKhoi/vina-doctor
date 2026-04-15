@@ -406,7 +406,180 @@ The consultation status is shown as a coloured pill on the History page and the 
 Use the language tabs (\textbf{Tiếng Việt}, \textbf{English}, \textbf{Français}) above the SOAP sections
 to switch the display language. The underlying data is stored in all three languages simultaneously.
 
-% --- Section 11: Glossary ----------------------------------------------------
+% --- Section 11: Aliyun Cloud Deployment -------------------------------
+\section{Aliyun Cloud Deployment}
+
+This section describes how to provision an Alibaba Cloud ECS instance and deploy
+the Vina Doctor system onto it.
+
+\subsection{Aliyun Cloud Overview}
+
+Aliyun (Alibaba Cloud) is the cloud infrastructure platform used to host the
+Vina Doctor application. The system runs on a single \textbf{Elastic Compute Service}
+(ECS) instance — a virtual server in the cloud — with the following topology:
+
+\begin{itemize}
+	\item \textbf{ECS Instance} — virtual server running Docker Compose
+	\item \textbf{nginx} — reverse proxy routing traffic on port 80 to the correct container
+	\item \textbf{frontend} — Next.js web application (internal port 3000)
+	\item \textbf{backend} — FastAPI REST API (internal port 8001)
+	\item \textbf{ai\_engine} — FastAPI audio processing service (internal port 8000)
+	\item \textbf{postgres} — PostgreSQL database (internal port 5432)
+\end{itemize}
+
+Traffic from the internet reaches nginx on port 80 only. nginx forwards requests
+to the appropriate container based on the URL path.
+
+\subsection{Checking the ECS Instance}
+
+To inspect the running ECS instance:
+
+\begin{verbatim}
+ssh -i ~/.ssh/vina-doctor-key.pem root@47.238.224.19
+\end{verbatim}
+
+Once connected, the following commands are useful:
+
+\begin{verbatim}
+# List running containers
+docker compose -f /opt/vina-doctor/docker-compose.yml ps
+
+# View logs for a specific service
+docker compose -f /opt/vina-doctor/docker-compose.yml logs ai_engine
+docker compose -f /opt/vina-doctor/docker-compose.yml logs --tail=50 backend
+
+# Restart a specific service
+docker compose -f /opt/vina-doctor/docker-compose.yml restart ai_engine
+
+# View resource usage
+docker stats
+\end{verbatim}
+
+The application files are located at \texttt{/opt/vina-doctor/} on the instance.
+
+\subsection{Pulling and Deploying New Images}
+
+When a new version of the code is merged to \texttt{main}, the GitHub Actions
+CI pipeline automatically builds and pushes new Docker images to the registry,
+then SSHs into the ECS instance and runs:
+
+\begin{verbatim}
+docker compose -f /opt/vina-doctor/docker-compose.yml pull
+docker compose -f /opt/vina-doctor/docker-compose.yml up -d
+\end{verbatim}
+
+To manually trigger a redeploy on the ECS instance:
+
+\begin{verbatim}
+# Connect to the instance
+ssh -i ~/.ssh/vina-doctor-key.pem root@47.238.224.19
+
+# Navigate to the deploy directory
+cd /opt/vina-doctor
+
+# Pull the latest images from the registry
+docker compose pull
+
+# Restart all containers (pulled images are used automatically)
+docker compose up -d
+
+# Verify all containers are running
+docker compose ps
+\end{verbatim}
+
+\subsection{Updating Environment Variables on ECS}
+
+To update secrets such as the DashScope API key or database URL:
+
+\begin{verbatim}
+# Edit the environment file
+nano /opt/vina-doctor/.env
+
+# Or edit the docker-compose.env file if present
+nano /opt/vina-doctor/docker-compose.env
+
+# Restart the affected service
+docker compose -f /opt/vina-doctor/docker-compose.yml restart ai_engine
+\end{verbatim}
+
+After editing the \texttt{.env} file, it is safe to restart the service —
+Docker Compose reads the env file on every \texttt{up}.
+
+\subsection{Opening Ports on Aliyun Console}
+
+If a new port needs to be exposed (e.g., for debugging):
+
+\begin{enumerate}
+	\item Log into the \textbf{Alibaba Cloud Console} at \url{https://console.aliyun.com}
+	\item Navigate to \textbf{ECS} $\rightarrow$ \textbf{Instances}
+	\item Click on the ECS instance \texttt{ecs-vina-doctor}
+	\item Select the \textbf{Security Groups} tab
+	\item Click \textbf{Rule Management} $\rightarrow$ \textbf{Authorize}
+	\item Add a rule:
+	      \begin{tabular}{m{3cm}m{9cm}}
+		      \textbf{Protocol}   & \texttt{TCP}                    \\
+		      \textbf{Port Range} & e.g. \texttt{9000/9000}         \\
+		      \textbf{Source}     & \texttt{0.0.0.0/0} (or your IP) \\
+		      \textbf{Priority}   & \texttt{1} (highest)            \\
+	      \end{tabular}
+	\item Save the rule. The port will be reachable within a few minutes.
+\end{enumerate}
+
+The security group \texttt{sg-j6ce23ubouh3ef0479if} is currently assigned to
+the instance.
+
+\subsection{Checking the Aliyun CLI (\texttt{aliyun})}
+
+The \texttt{aliyun} CLI v3.3.4 is installed at
+\texttt{/home/linuxbrew/.linuxbrew/bin/aliyun}. It can be used to manage
+Aliyun resources directly from a terminal:
+
+\begin{verbatim}
+# Verify installation and version
+aliyun --version
+
+# List ECS instances
+aliyun ecs DescribeInstances --output json
+
+# Check a specific instance
+aliyun ecs DescribeInstanceAttribute --InstanceId <instance-id>
+\end{verbatim}
+
+Typical usage for Vina Doctor:
+
+\begin{verbatim}
+# List all running ECS instances
+aliyun ecs DescribeInstances --RegionId ap-southeast-1 \
+  --output json | jq '.Instances.Instance[] | {InstanceId, HostName, Status}'
+
+# Check instance public IP
+aliyun ecs DescribePublicIpAddresses --InstanceIds '["i-xxxxxxxxx"]' \
+  --output json
+\end{verbatim}
+
+\subsection{Certificate and Domain Setup (Serveo)}
+
+Vina Doctor uses \textbf{Serveo} to expose the local development machine to the
+internet via a subdomain. In production the domain
+\texttt{vina-doctor.serveousercontent.com} is managed through Serveo:
+
+\begin{verbatim}
+# Create an SSH tunnel to expose the service via Serveo
+ssh -o ServerAliveInterval=60 \
+  -R vina-doctor.serveousercontent.com:80:localhost:80 \
+  root@serveo.net
+\end{verbatim}
+
+This tunnels traffic from \texttt{vina-doctor.serveousercontent.com} on port 80
+to the local \texttt{localhost:80}. The Serveo URL is used as the
+\textbf{Callback URL} in authentication flows and as the public entry point
+for the frontend.
+
+In a production deployment on Aliyun, this step is not needed because the
+ECS instance has a public IP (\texttt{47.238.224.19}) and nginx handles
+routing directly.
+
+% --- Section 12: Glossary ----------------------------------------------------
 \section{Glossary}
 
 \begin{tabular}{m{4cm}m{8cm}}
