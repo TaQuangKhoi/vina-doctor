@@ -120,5 +120,5 @@ export const TASK_DESCRIPTIONS: Record<TaskKey, string> = {
 
 export const DEFAULT_MODELS: Record<TaskKey, string> = {
   scribe: "qwen3-asr-flash",
-  clinical: "qwen3.5-omni-flash",
+  clinical: "qwen3.5-plus",
 } as const;

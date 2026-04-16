@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updateModel } from "@/features/settings/api/settings-api";
 import type { TaskKey } from "@/features/settings/model-preference/types";
 import type { UpdateModelRequest } from "@/features/settings/types";
@@ -17,9 +17,14 @@ export function useModelPreference({
   onSuccess,
   onError,
 }: UseModelPreferenceOptions) {
+  const queryClient = useQueryClient();
+
   const mutation = useMutation({
     mutationFn: (payload: UpdateModelRequest) => updateModel(payload),
-    onSuccess,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-config"] });
+      onSuccess();
+    },
     onError,
   });
 
