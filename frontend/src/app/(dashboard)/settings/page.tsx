@@ -275,12 +275,13 @@ export default function SettingsPage() {
             role="switch"
             aria-checked={remoteConfig?.icd10_enrich_enabled ?? false}
             onClick={() => {
+              const newEnabled = !remoteConfig?.icd10_enrich_enabled;
               updateIcd10Enrich(
-                { enabled: !remoteConfig?.icd10_enrich_enabled },
+                { enabled: newEnabled },
                 {
                   onSuccess: () =>
                     showSuccess(
-                      `ICD-10 enrichment ${!remoteConfig?.icd10_enrich_enabled ? "enabled" : "disabled"}.`,
+                      `ICD-10 enrichment ${newEnabled ? "enabled" : "disabled"}.`,
                     ),
                   onError: (err) =>
                     showError(
@@ -301,8 +302,8 @@ export default function SettingsPage() {
             <span
               className={`absolute top-1 h-4 w-4 rounded-full bg-on-primary-container transition-transform duration-200 ${
                 remoteConfig?.icd10_enrich_enabled
-                  ? "translate-x-6"
-                  : "translate-x-1"
+                  ? "left-auto right-1"
+                  : "left-1 right-auto"
               }`}
             />
           </button>
