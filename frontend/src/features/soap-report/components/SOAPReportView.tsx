@@ -27,6 +27,72 @@ const SECTIONS: { key: keyof Pick<SOAPReport, "subjective" | "objective" | "asse
   { key: "plan", label: "Plan" },
 ];
 
+/**
+ * Renders SOAP section text with proper formatting.
+ * Handles:
+ *  - Existing newlines (preserved)
+ *  - Inline numbered lists: "1. foo 2. bar" → split into list items
+ *  - Inline bullet lists: "- foo - bar" or "• foo • bar"
+ */
+function FormattedContent({ text }: { text: string }) {
+  // Split on existing newlines first, then detect inline numbered/bullet items
+  const lines = text.split(/\n/);
+  const items: string[] = [];
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    // Detect inline numbered list: "1. ... 2. ..." — split on " N." where N is a digit(s)
+    if (/^\d+\./.test(trimmed)) {
+      // Already starts with a number — split siblings if any
+      const parts = trimmed.split(/(?=\s\d+\.\s)/);
+      for (const part of parts) {
+        if (part.trim()) items.push(part.trim());
+      }
+    } else if (/\s\d+\.\s/.test(trimmed) && !/^\d+\./.test(trimmed)) {
+      // Inline sequence without leading number e.g. "intro 1. foo 2. bar"
+      const parts = trimmed.split(/(?=\s\d+\.\s)/);
+      for (const part of parts) {
+        if (part.trim()) items.push(part.trim());
+      }
+    } else {
+      items.push(trimmed);
+    }
+  }
+
+  // Determine if list-like (most items start with "N." or "-" or "•")
+  const listLike =
+    items.length > 1 &&
+    items.filter((i) => /^\d+\./.test(i) || /^[-•]/.test(i)).length >
+      items.length / 2;
+
+  if (listLike) {
+    return (
+      <ul className="flex flex-col gap-2">
+        {items.map((item, i) => {
+          // Strip leading "N. " for clean rendering inside <li>
+          const body = item.replace(/^\d+\.\s*/, "").replace(/^[-•]\s*/, "");
+          return (
+            <li key={i} className="flex gap-2 text-sm leading-relaxed text-on-surface">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-container/15 text-[10px] font-bold text-primary-container">
+                {i + 1}
+              </span>
+              <span>{body}</span>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
+
+  return (
+    <p className="whitespace-pre-wrap text-sm leading-relaxed text-on-surface break-words">
+      {items.join("\n")}
+    </p>
+  );
+}
+
 export function SOAPReportView({ report }: { report: SOAPReport }) {
   const [lang, setLang] = useState<ReportLanguage>("vn");
   const [expanded, setExpanded] = useState<Set<string>>(
@@ -129,9 +195,7 @@ export function SOAPReportView({ report }: { report: SOAPReport }) {
             </button>
             {isOpen && (
               <div className="border-t border-outline-variant/15 px-6 py-4">
-                <pre className="text-sm leading-relaxed text-on-surface whitespace-pre-wrap font-sans break-words">
-                  {content}
-                </pre>
+                <FormattedContent text={content} />
               </div>
             )}
           </div>
