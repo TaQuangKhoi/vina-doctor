@@ -8,9 +8,15 @@ from backend.domain.entities import SOAPReport, TranscriptTurn
 class AiEngineConfigData:
     """Value object — current runtime config returned by ai_engine GET /v1/config."""
 
-    def __init__(self, dashscope_base_url: str, models: dict[str, str]) -> None:
+    def __init__(
+        self,
+        dashscope_base_url: str,
+        models: dict[str, str],
+        icd10_enrich_enabled: bool = False,
+    ) -> None:
         self.dashscope_base_url = dashscope_base_url
         self.models = models
+        self.icd10_enrich_enabled = icd10_enrich_enabled
 
 
 class AiEngineClientProtocol(Protocol):
@@ -33,6 +39,10 @@ class AiEngineClientProtocol(Protocol):
 
     async def update_model(self, task: str, model_id: str) -> None:
         """Push a per-task model override to ai_engine at runtime."""
+        ...
+
+    async def update_icd10_enrich(self, enabled: bool) -> None:
+        """Toggle ICD-10 context injection in ai_engine at runtime."""
         ...
 
     async def get_config(self) -> AiEngineConfigData:

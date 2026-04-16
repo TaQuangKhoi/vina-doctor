@@ -57,13 +57,13 @@ export async function updateModel(
 }
 
 /**
- * PATCH /v1/config/icd10-enrich
+ * PATCH /api/v1/admin/config/icd10-enrich
  * Toggles ICD-10 context injection into the Clinical Agent pipeline at runtime.
  */
 export async function updateIcd10Enrich(
   payload: UpdateIcd10EnrichRequest,
 ): Promise<void> {
-  return api.patch<void>("/config/icd10-enrich", payload);
+  return api.patch<void>("/admin/config/icd10-enrich", payload);
 }
 
 /**

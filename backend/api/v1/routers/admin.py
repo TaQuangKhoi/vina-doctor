@@ -51,9 +51,14 @@ class UpdateModelRequest(BaseModel):
         return v.strip()
 
 
+class UpdateIcd10EnrichRequest(BaseModel):
+    enabled: bool
+
+
 class ConfigResponse(BaseModel):
     dashscope_base_url: str
     models: dict[str, str]
+    icd10_enrich_enabled: bool
 
 
 # ---------------------------------------------------------------------------
@@ -133,6 +138,30 @@ async def update_model(
         ) from exc
 
 
+@router.patch(
+    "/config/icd10-enrich",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Toggle ICD-10 context injection at runtime",
+    description=(
+        "Proxies the toggle to the AI engine service, enabling or disabling "
+        "ICD-10 enrichment in the Clinical Agent pipeline without a restart. "
+        "Requires a valid Bearer JWT."
+    ),
+)
+async def update_icd10_enrich(
+    body: UpdateIcd10EnrichRequest,
+    _user_id: str = Depends(get_current_user_id),
+    ai_engine: AiEngineClientProtocol = Depends(get_ai_engine_client),
+) -> None:
+    try:
+        await ai_engine.update_icd10_enrich(body.enabled)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to update ICD-10 enrich setting in ai_engine: {exc}",
+        ) from exc
+
+
 @router.get(
     "/config",
     response_model=ConfigResponse,
@@ -156,4 +185,5 @@ async def get_config(
     return ConfigResponse(
         dashscope_base_url=data.dashscope_base_url,
         models=data.models,
+        icd10_enrich_enabled=data.icd10_enrich_enabled,
     )

@@ -61,6 +61,13 @@ class HttpAiEngineClient:
             )
             response.raise_for_status()
 
+    async def update_icd10_enrich(self, enabled: bool) -> None:
+        """Forward the ICD-10 enrich toggle to ai_engine via PATCH /v1/config/icd10-enrich."""
+        url = f"{self._base_url}/v1/config/icd10-enrich"
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.patch(url, json={"enabled": enabled})
+            response.raise_for_status()
+
     async def get_config(self) -> AiEngineConfigData:
         """Fetch current runtime config from ai_engine via GET /v1/config."""
         url = f"{self._base_url}/v1/config"
@@ -71,6 +78,7 @@ class HttpAiEngineClient:
         return AiEngineConfigData(
             dashscope_base_url=data.get("dashscope_base_url", ""),
             models=data.get("models", {}),
+            icd10_enrich_enabled=bool(data.get("icd10_enrich_enabled", False)),
         )
 
 
