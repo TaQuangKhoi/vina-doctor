@@ -13,6 +13,7 @@ import {
   ComboboxTrigger,
   ComboboxValue,
 } from "@/components/ui/combobox";
+import { Switch } from "@/components/ui/switch";
 import {
   useUpdateApiKey,
   useUpdateDashscopeUrl,
@@ -315,7 +316,7 @@ export default function SettingsPage() {
         {/* ICD-10 enrichment toggle */}
         <div className="mt-6 flex items-start justify-between gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-semibold text-on-surface">
+            <label htmlFor="icd10-toggle" className="text-sm font-semibold text-on-surface">
               ICD-10 Context Injection
             </label>
             <p className="text-xs text-on-surface-variant">
@@ -324,18 +325,16 @@ export default function SettingsPage() {
               Changes take effect immediately — no restart required.
             </p>
           </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={remoteConfig?.icd10_enrich_enabled ?? false}
-            onClick={() => {
-              const newEnabled = !remoteConfig?.icd10_enrich_enabled;
+          <Switch
+            id="icd10-toggle"
+            checked={remoteConfig?.icd10_enrich_enabled ?? false}
+            onCheckedChange={(checked) => {
               updateIcd10Enrich(
-                { enabled: newEnabled },
+                { enabled: checked },
                 {
                   onSuccess: () =>
                     showSuccess(
-                      `ICD-10 enrichment ${newEnabled ? "enabled" : "disabled"}.`,
+                      `ICD-10 enrichment ${checked ? "enabled" : "disabled"}.`,
                     ),
                   onError: (err) =>
                     showError(
@@ -347,20 +346,7 @@ export default function SettingsPage() {
               );
             }}
             disabled={isIcd10Pending}
-            className={`mt-0.5 relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-container ${
-              remoteConfig?.icd10_enrich_enabled
-                ? "bg-primary-container"
-                : "bg-outline-variant"
-            } ${isIcd10Pending ? "opacity-50" : ""}`}
-          >
-            <span
-              className={`absolute top-1 h-4 w-4 rounded-full bg-on-primary-container transition-transform duration-200 ${
-                remoteConfig?.icd10_enrich_enabled
-                  ? "left-auto right-1"
-                  : "left-1 right-auto"
-              }`}
-            />
-          </button>
+          />
         </div>
       </Card>
     </div>
