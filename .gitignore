@@ -27,6 +27,7 @@ backend/.env
 *.swp
 *.swo
 .opencode/
+opencode.json
 
 # OS
 .DS_Store

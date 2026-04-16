@@ -4,6 +4,16 @@ import { useState } from "react";
 import { Card, Button, Input } from "@/shared/components";
 import { useToast } from "@/shared/components/ToastContext";
 import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxTrigger,
+  ComboboxValue,
+} from "@/components/ui/combobox";
+import {
   useUpdateApiKey,
   useUpdateDashscopeUrl,
   useAdminConfig,
@@ -14,6 +24,12 @@ import {
 } from "@/features/settings";
 
 const DEFAULT_DASHSCOPE_URL = "https://dashscope-intl.aliyuncs.com/api/v1";
+
+const LANGUAGES = [
+  { value: "vi", label: "Vietnamese" },
+  { value: "en", label: "English" },
+  { value: "fr", label: "French" },
+] as const;
 
 export default function SettingsPage() {
   const { showSuccess, showError } = useToast();
@@ -160,21 +176,59 @@ export default function SettingsPage() {
             <label className="mb-1 block text-xs font-semibold text-on-surface-variant">
               Primary Dictation Language
             </label>
-            <select className="w-full rounded-xl border border-outline-variant bg-surface-lowest px-4 py-2.5 text-sm text-on-surface focus:border-primary-container focus:outline-none">
-              <option>Vietnamese</option>
-              <option>English</option>
-              <option>French</option>
-            </select>
+            <Combobox
+              items={LANGUAGES}
+              defaultValue={LANGUAGES[0]}
+              itemToStringValue={(item) => item.label}
+            >
+              <ComboboxTrigger
+                render={
+                  <button className="flex w-full items-center justify-between rounded-xl border border-outline-variant bg-surface-lowest px-4 py-2.5 text-sm text-on-surface focus:border-primary-container focus:outline-none" />
+                }
+              >
+                <ComboboxValue />
+              </ComboboxTrigger>
+              <ComboboxContent>
+                <ComboboxInput showTrigger={false} placeholder="Search language…" />
+                <ComboboxEmpty>No language found.</ComboboxEmpty>
+                <ComboboxList>
+                  {(item) => (
+                    <ComboboxItem key={item.value} value={item}>
+                      {item.label}
+                    </ComboboxItem>
+                  )}
+                </ComboboxList>
+              </ComboboxContent>
+            </Combobox>
           </div>
           <div>
             <label className="mb-1 block text-xs font-semibold text-on-surface-variant">
               Report Output Language
             </label>
-            <select className="w-full rounded-xl border border-outline-variant bg-surface-lowest px-4 py-2.5 text-sm text-on-surface focus:border-primary-container focus:outline-none">
-              <option>Vietnamese</option>
-              <option>English</option>
-              <option>French</option>
-            </select>
+            <Combobox
+              items={LANGUAGES}
+              defaultValue={LANGUAGES[0]}
+              itemToStringValue={(item) => item.label}
+            >
+              <ComboboxTrigger
+                render={
+                  <button className="flex w-full items-center justify-between rounded-xl border border-outline-variant bg-surface-lowest px-4 py-2.5 text-sm text-on-surface focus:border-primary-container focus:outline-none" />
+                }
+              >
+                <ComboboxValue />
+              </ComboboxTrigger>
+              <ComboboxContent>
+                <ComboboxInput showTrigger={false} placeholder="Search language…" />
+                <ComboboxEmpty>No language found.</ComboboxEmpty>
+                <ComboboxList>
+                  {(item) => (
+                    <ComboboxItem key={item.value} value={item}>
+                      {item.label}
+                    </ComboboxItem>
+                  )}
+                </ComboboxList>
+              </ComboboxContent>
+            </Combobox>
           </div>
         </div>
       </Card>
