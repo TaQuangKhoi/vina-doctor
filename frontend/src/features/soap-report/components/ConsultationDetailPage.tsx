@@ -6,6 +6,7 @@ import { useConsultation } from "@/features/consultation/hooks/useConsultation";
 import { useSOAPReport } from "../hooks/useSOAPReport";
 import { SOAPReportView } from "./SOAPReportView";
 import { TranscriptView } from "./TranscriptView";
+import { AudioPlayer } from "./AudioPlayer";
 import { retryConsultation } from "@/features/consultation/api/consultation-api";
 
 export function ConsultationDetailPage({ id }: { id: string }) {
@@ -69,6 +70,13 @@ export function ConsultationDetailPage({ id }: { id: string }) {
           {c && <StatusPill status={c.status} />}
         </div>
       </div>
+
+      {/* Audio playback — always visible once consultation is loaded */}
+      {c && (
+        <Card className="p-4">
+          <AudioPlayer consultationId={c.id} />
+        </Card>
+      )}
 
       {/* Processing state */}
       {(c?.status === "pending" || c?.status === "processing") && (

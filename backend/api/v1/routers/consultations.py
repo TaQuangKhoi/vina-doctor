@@ -3,10 +3,12 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
+from fastapi.responses import Response
 
 from backend.api.v1.deps import (
     get_create_consultation_use_case,
     get_current_user_id,
+    get_get_consultation_audio_use_case,
     get_get_consultation_use_case,
     get_list_consultations_use_case,
     get_retry_consultation_use_case,
@@ -17,6 +19,9 @@ from backend.api.v1.schemas.consultation import (
 )
 from backend.application.use_cases.create_consultation_use_case import (
     CreateConsultationUseCase,
+)
+from backend.application.use_cases.get_consultation_audio_use_case import (
+    GetConsultationAudioUseCase,
 )
 from backend.application.use_cases.get_consultation_use_case import (
     GetConsultationUseCase,
@@ -111,6 +116,40 @@ async def retry_consultation(
             status_code=status.HTTP_409_CONFLICT, detail=str(exc)
         ) from exc
     return _to_response(consultation)
+
+
+@router.get(
+    "/{consultation_id}/audio",
+    summary="Stream the uploaded audio for a consultation",
+    response_class=Response,
+)
+async def get_consultation_audio(
+    consultation_id: UUID,
+    doctor_id: UUID = Depends(get_current_user_id),
+    use_case: GetConsultationAudioUseCase = Depends(
+        get_get_consultation_audio_use_case
+    ),
+) -> Response:
+    try:
+        audio_bytes, media_type, filename = await use_case.execute(
+            consultation_id=consultation_id, doctor_id=doctor_id
+        )
+    except NotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
+    except AccessDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)
+        ) from exc
+    return Response(
+        content=audio_bytes,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f'inline; filename="{filename}"',
+            "Accept-Ranges": "bytes",
+        },
+    )
 
 
 @router.get(

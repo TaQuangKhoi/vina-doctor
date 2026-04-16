@@ -1,4 +1,4 @@
-import { api } from "@/shared/lib/api-client";
+import { api, getAuthToken } from "@/shared/lib/api-client";
 import type {
   ConsultationListResponse,
   ConsultationResponse,
@@ -34,3 +34,27 @@ export async function createConsultation(
 export async function retryConsultation(id: string): Promise<ConsultationResponse> {
   return api.post<ConsultationResponse>(`/consultations/${id}/retry`);
 }
+
+/**
+ * Fetch the consultation audio as a blob URL.
+ * Returns an object URL that must be revoked by the caller when no longer needed.
+ */
+export async function fetchConsultationAudioUrl(id: string): Promise<string> {
+  const token = getAuthToken();
+  const baseUrl =
+    typeof window !== "undefined"
+      ? `${window.location.protocol}//${window.location.host}`
+      : (process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8001");
+
+  const res = await fetch(`${baseUrl}/api/v1/consultations/${id}/audio`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to load audio: ${res.statusText}`);
+  }
+
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+

@@ -15,6 +15,9 @@ from backend.application.use_cases.auth_use_cases import (
 from backend.application.use_cases.create_consultation_use_case import (
     CreateConsultationUseCase,
 )
+from backend.application.use_cases.get_consultation_audio_use_case import (
+    GetConsultationAudioUseCase,
+)
 from backend.application.use_cases.get_consultation_use_case import (
     GetConsultationUseCase,
 )
@@ -139,6 +142,16 @@ def get_create_consultation_use_case(
 
 def get_get_consultation_use_case(consultation_repo=Depends(get_consultation_repo)):
     return GetConsultationUseCase(consultation_repo=consultation_repo)
+
+
+def get_get_consultation_audio_use_case(
+    consultation_repo=Depends(get_consultation_repo),
+    audio_storage=Depends(get_audio_storage),
+):
+    return GetConsultationAudioUseCase(
+        consultation_repo=consultation_repo,
+        audio_storage=audio_storage,
+    )
 
 
 def get_list_consultations_use_case(consultation_repo=Depends(get_consultation_repo)):
