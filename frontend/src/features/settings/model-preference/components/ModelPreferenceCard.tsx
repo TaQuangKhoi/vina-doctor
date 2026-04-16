@@ -46,18 +46,23 @@ function itemToStringValue(item: ComboboxModelItem): string {
   return "Custom Model…";
 }
 
-
-
-function findDefaultItem(
+function findItemByModelId(
   items: ComboboxModelItem[],
-  remoteValue: string | undefined,
+  modelId: string | undefined,
 ): ComboboxModelItem | null {
-  if (!remoteValue) return null;
+  if (!modelId) return null;
   return (
     items.find(
-      (item) => item.type === "preset" && item.model.id === remoteValue,
+      (item) => item.type === "preset" && item.model.id === modelId,
     ) ?? null
   );
+}
+
+function ModelItemLabel({ item }: { item: ComboboxModelItem }) {
+  if (item.type === "preset") {
+    return <span className="text-sm font-medium text-on-surface">{item.model.label}</span>;
+  }
+  return <span className="text-sm text-on-surface-variant">Custom Model…</span>;
 }
 
 export function ModelPreferenceCard({
@@ -67,9 +72,9 @@ export function ModelPreferenceCard({
 }: ModelPreferenceCardProps) {
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customId, setCustomId] = useState("");
+  const [selectedItem, setSelectedItem] = useState<ComboboxModelItem | null>(null);
 
   const items = buildItems(task);
-  const defaultItem = findDefaultItem(items, remoteValue);
 
   const { save, isPending } = useModelPreference({
     task,
@@ -84,6 +89,7 @@ export function ModelPreferenceCard({
   const handleValueChange = useCallback(
     (item: ComboboxModelItem | null) => {
       if (!item) return;
+      setSelectedItem(item);
       if (item.type === "preset") {
         save(item.model.id);
       } else {
@@ -102,6 +108,11 @@ export function ModelPreferenceCard({
     [save],
   );
 
+  const displayItem = (() => {
+    if (selectedItem) return selectedItem;
+    return findItemByModelId(items, remoteValue ?? undefined);
+  })();
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -117,7 +128,7 @@ export function ModelPreferenceCard({
 
       <Combobox<ComboboxModelItem>
         items={items}
-        defaultValue={defaultItem}
+        value={displayItem}
         itemToStringValue={itemToStringValue}
         onValueChange={handleValueChange}
         disabled={isPending || isConfigLoading}
@@ -131,7 +142,15 @@ export function ModelPreferenceCard({
             />
           }
         >
-          <ComboboxValue />
+          <ComboboxValue>
+            {(selectedItem) =>
+              selectedItem ? (
+                <ModelItemLabel item={selectedItem} />
+              ) : (
+                <span className="text-muted-foreground">Select a model…</span>
+              )
+            }
+          </ComboboxValue>
         </ComboboxTrigger>
         <ComboboxContent>
           <ComboboxInput showTrigger={false} placeholder="Search models…" />
@@ -177,7 +196,7 @@ export function ModelPreferenceCard({
             }}
             disabled={isPending}
           />
-          {customId.trim() && !defaultItem && (
+          {customId.trim() && !displayItem && (
             <p className="text-xs text-on-surface-variant">
               Active: <span className="font-mono">{customId.trim()}</span>
             </p>
