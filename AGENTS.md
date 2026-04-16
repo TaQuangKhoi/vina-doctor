@@ -81,7 +81,7 @@ but push <branch-name>
 gh pr create --title "..." --body "..." --base main --head <branch-name> --repo sotaworksvn/vina-doctor
 
 # After CI passes, merge automatically
-gh pr merge <pr-number> --squash --auto --delete-branch --repo sotaworksvn/vina-doctor
+gh pr merge <pr-number> --merge --auto --delete-branch --repo sotaworksvn/vina-doctor
 ```
 
 **After pushing and creating a PR, always wait for CI to pass then merge automatically. Do NOT leave PRs for manual merge.**
