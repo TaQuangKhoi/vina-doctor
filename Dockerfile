@@ -17,7 +17,6 @@ RUN cd ai_engine && uv sync --frozen --no-dev --no-install-project
 
 # Copy the full source tree
 COPY ai_engine/ ./ai_engine/
-COPY docs/ /app/docs/
 
 # Install the project now that source is present
 RUN cd ai_engine && uv sync --frozen --no-dev
