@@ -1,17 +1,26 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Button, Input } from "@/shared/components";
-import { useToast } from "@/shared/components/ToastContext";
+import {
+  Combobox,
+  ComboboxTrigger,
+  ComboboxValue,
+  ComboboxContent,
+  ComboboxInput,
+  ComboboxEmpty,
+  ComboboxList,
+  ComboboxItem,
+} from "@/components/ui/combobox";
+import { Input } from "@/components/ui/input";
+import { useModelPreference } from "@/features/settings/model-preference/hooks/useModelPreference";
 import {
   SCRIBE_PRESET_MODELS,
   CLINICAL_PRESET_MODELS,
   TASK_LABELS,
   TASK_DESCRIPTIONS,
-  DEFAULT_MODELS,
   type TaskKey,
+  type ModelOption,
 } from "@/features/settings/model-preference/types";
-import { useModelPreference } from "@/features/settings/model-preference/hooks/useModelPreference";
 
 export interface ModelPreferenceCardProps {
   task: TaskKey;
@@ -19,111 +28,162 @@ export interface ModelPreferenceCardProps {
   isConfigLoading: boolean;
 }
 
+type ComboboxModelItem =
+  | { type: "preset"; model: ModelOption }
+  | { type: "custom" };
+
+function buildItems(task: TaskKey): ComboboxModelItem[] {
+  const presets =
+    task === "scribe" ? SCRIBE_PRESET_MODELS : CLINICAL_PRESET_MODELS;
+  return [
+    ...presets.map((model): ComboboxModelItem => ({ type: "preset", model })),
+    { type: "custom" },
+  ];
+}
+
+function itemToStringValue(item: ComboboxModelItem): string {
+  if (item.type === "preset") return item.model.label;
+  return "Custom Model…";
+}
+
+
+
+function findDefaultItem(
+  items: ComboboxModelItem[],
+  remoteValue: string | undefined,
+): ComboboxModelItem | null {
+  if (!remoteValue) return null;
+  return (
+    items.find(
+      (item) => item.type === "preset" && item.model.id === remoteValue,
+    ) ?? null
+  );
+}
+
 export function ModelPreferenceCard({
   task,
   remoteValue,
   isConfigLoading,
 }: ModelPreferenceCardProps) {
-  const { showSuccess, showError } = useToast();
-
-  const [draft, setDraft] = useState<string | null>(null);
+  const [showCustomInput, setShowCustomInput] = useState(false);
   const [customId, setCustomId] = useState("");
 
-  const effectiveValue = draft ?? remoteValue ?? DEFAULT_MODELS[task];
-
-  const handlePresetClick = useCallback((modelId: string) => {
-    setDraft(modelId);
-    setCustomId("");
-  }, []);
-
-  const handleCustomChange = useCallback((value: string) => {
-    setCustomId(value);
-    if (value.trim()) {
-      setDraft(value.trim());
-    }
-  }, []);
+  const items = buildItems(task);
+  const defaultItem = findDefaultItem(items, remoteValue);
 
   const { save, isPending } = useModelPreference({
     task,
     remoteValue,
     onSuccess: () => {
-      showSuccess(`${TASK_LABELS[task]} saved.`);
-      setDraft(null);
+      setCustomId("");
+      setShowCustomInput(false);
     },
-    onError: (err) => {
-      showError(
-        err instanceof Error ? err.message : `Failed to update ${TASK_LABELS[task]}.`,
-      );
-    },
+    onError: () => {},
   });
 
-  const handleSave = useCallback(() => {
-    const modelId = effectiveValue.trim();
-    if (!modelId) return;
-    save(modelId);
-  }, [effectiveValue, save]);
+  const handleValueChange = useCallback(
+    (item: ComboboxModelItem | null) => {
+      if (!item) return;
+      if (item.type === "preset") {
+        save(item.model.id);
+      } else {
+        setShowCustomInput(true);
+      }
+    },
+    [save],
+  );
 
-  const presets = task === "scribe" ? SCRIBE_PRESET_MODELS : CLINICAL_PRESET_MODELS;
-  const isPresetSelected = presets.some((m) => m.id === effectiveValue);
-
-  const taskLabel = TASK_LABELS[task];
-  const taskDescription = TASK_DESCRIPTIONS[task];
+  const handleCustomSave = useCallback(
+    (value: string) => {
+      const trimmed = value.trim();
+      if (!trimmed) return;
+      save(trimmed);
+    },
+    [save],
+  );
 
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h3 className="text-sm font-semibold text-on-surface">{taskLabel}</h3>
+        <h3 className="text-sm font-semibold text-on-surface">
+          {TASK_LABELS[task]}
+        </h3>
         <p className="text-xs text-on-surface-variant">
           {isConfigLoading
             ? "Loading current model from server…"
-            : taskDescription}
+            : TASK_DESCRIPTIONS[task]}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {presets.map((m) => (
-          <button
-            key={m.id}
-            type="button"
-            onClick={() => handlePresetClick(m.id)}
-            className={`flex flex-col gap-1.5 rounded-xl p-4 text-left transition-all ${
-              effectiveValue === m.id
-                ? "bg-surface-lowest ring-2 ring-primary-container shadow-[var(--shadow-ambient)]"
-                : "bg-surface-low hover:bg-surface-lowest"
-            }`}
-          >
-            <span className="text-xl">{m.icon}</span>
-            <p className="text-sm font-semibold text-on-surface">{m.label}</p>
-            <p className="text-xs text-on-surface-variant">{m.description}</p>
-            <p className="mt-0.5 font-mono text-xs text-on-surface-variant opacity-70">
-              {m.id}
-            </p>
-          </button>
-        ))}
-      </div>
-
-      <div>
-        <Input
-          label="Custom Model ID (optional)"
-          placeholder="e.g. qwen3-asr-turbo"
-          value={customId}
-          onChange={(e) => handleCustomChange(e.target.value)}
-        />
-        {!isPresetSelected && effectiveValue && (
-          <p className="mt-1 text-xs text-on-surface-variant">
-            Active: <span className="font-mono">{effectiveValue}</span>
-          </p>
-        )}
-      </div>
-
-      <div className="flex justify-end">
-        <Button
-          onClick={handleSave}
-          disabled={isPending || !effectiveValue.trim()}
+      <Combobox<ComboboxModelItem>
+        items={items}
+        defaultValue={defaultItem}
+        itemToStringValue={itemToStringValue}
+        onValueChange={handleValueChange}
+        disabled={isPending || isConfigLoading}
+      >
+        <ComboboxTrigger
+          render={
+            <button
+              type="button"
+              disabled={isPending || isConfigLoading}
+              className="flex w-full items-center justify-between rounded-xl border border-outline-variant bg-surface-lowest px-4 py-2.5 text-sm text-on-surface focus:border-primary-container focus:outline-none disabled:opacity-50"
+            />
+          }
         >
-          {isPending ? "Saving…" : "Save"}
-        </Button>
-      </div>
+          <ComboboxValue />
+        </ComboboxTrigger>
+        <ComboboxContent>
+          <ComboboxInput showTrigger={false} placeholder="Search models…" />
+          <ComboboxEmpty>No model found.</ComboboxEmpty>
+          <ComboboxList>
+            {(item) => (
+              <ComboboxItem key={itemToStringValue(item)} value={item}>
+                {item.type === "preset" ? (
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-medium text-on-surface">
+                      {item.model.label}
+                    </span>
+                    <span className="text-xs text-on-surface-variant">
+                      {item.model.description}
+                    </span>
+                    <span className="text-xs font-mono text-on-surface-variant/60">
+                      {item.model.id}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-sm text-on-surface-variant">Custom Model…</span>
+                )}
+              </ComboboxItem>
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+
+      {showCustomInput && (
+        <div className="flex flex-col gap-1.5">
+          <Input
+            placeholder="e.g. qwen3-asr-turbo"
+            value={customId}
+            onChange={(e) => setCustomId(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleCustomSave(customId);
+              }
+            }}
+            onBlur={() => {
+              if (customId.trim()) handleCustomSave(customId);
+            }}
+            disabled={isPending}
+          />
+          {customId.trim() && !defaultItem && (
+            <p className="text-xs text-on-surface-variant">
+              Active: <span className="font-mono">{customId.trim()}</span>
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
