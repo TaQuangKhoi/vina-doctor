@@ -86,6 +86,12 @@ gh pr merge <pr-number> --squash --auto --delete-branch --repo sotaworksvn/vina-
 
 **After pushing and creating a PR, always wait for CI to pass then merge automatically. Do NOT leave PRs for manual merge.**
 
+**After any push or merge to `main`:**
+1. Monitor the **Deploy to ECS** workflow in the repository's Actions tab
+2. Wait for the `build-and-push` job to complete
+3. Wait for the `deploy` job to complete
+4. If either job fails, alert the user immediately with the failure details
+
 **Do NOT:**
 - `ssh` into remote server and run `docker` commands directly
 - Manually `git pull`, `docker build`, `docker compose up -d` on the server
