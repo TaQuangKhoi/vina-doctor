@@ -182,19 +182,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # ------------------------------------------------------------------
     # ICD-10 repository — always initialised (lightweight, no API calls)
     # The selector agent is only invoked when the toggle is enabled.
-    # Path resolution: Docker image mounts repo root at /app, so
-    # docs/icd10_treatment.json is at /app/docs/icd10_treatment.json.
-    # For local dev, fall back to a path relative to this file's repo root.
+    # Path resolution: the file lives at ai_engine/data/icd10_treatment.json
+    # so in Docker (/app/ai_engine/data/) and in local dev it resolves via
+    # __file__ relative to the package root.
     # ------------------------------------------------------------------
     _icd10_base = Path(
         os.environ.get(
             "VINA_ICD10_DATA_PATH",
-            "/app/docs/icd10_treatment.json",
+            "/app/ai_engine/data/icd10_treatment.json",
         )
     )
     if not _icd10_base.exists():
-        # Local dev fallback: resolve relative to ai_engine package root
-        _icd10_base = Path(__file__).parent.parent / "docs" / "icd10_treatment.json"
+        # Local dev fallback: relative to this file (ai_engine/main.py)
+        _icd10_base = Path(__file__).parent / "data" / "icd10_treatment.json"
 
     icd10_repository = ICD10Repository(_icd10_base)
     icd10_selector = ICD10SelectorAgent(

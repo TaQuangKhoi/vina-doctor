@@ -1,7 +1,7 @@
 """ICD-10 treatment reference repository.
 
 Design goals:
-- Loads the bundled ``docs/icd10_treatment.json`` as the *base* catalogue.
+- Loads the bundled ``data/icd10_treatment.json`` as the *base* catalogue.
 - Supports **specialty overlays**: extra entries (or full replacements) supplied
   per-specialty by clinicians.  These are merged at runtime — no restart needed.
 - Provides ``get_all_conditions()`` and ``get_by_codes()`` for the selector agent.
