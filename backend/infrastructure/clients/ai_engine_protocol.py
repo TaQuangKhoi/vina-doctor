@@ -26,7 +26,7 @@ class AiEngineClientProtocol(Protocol):
         self,
         audio_bytes: bytes,
         filename: str,
-        model: str = "qwen3-asr-flash",
+        model: str | None = None,
     ) -> tuple[SOAPReport, list[TranscriptTurn]]: ...
 
     async def update_dashscope_key(self, api_key: str) -> None:

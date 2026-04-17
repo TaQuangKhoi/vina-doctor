@@ -22,14 +22,15 @@ class HttpAiEngineClient:
         self,
         audio_bytes: bytes,
         filename: str,
-        model: str = "qwen3-asr-flash",
+        model: str | None = None,
     ) -> tuple[SOAPReport, list[TranscriptTurn]]:
         url = f"{self._base_url}/v1/consultations/process"
+        params = {"model": model} if model else {}
         async with httpx.AsyncClient(timeout=self._timeout) as client:
             response = await client.post(
                 url,
                 files={"file": (filename, audio_bytes, "audio/mpeg")},
-                params={"model": model},
+                params=params,
             )
             response.raise_for_status()
             data = response.json()

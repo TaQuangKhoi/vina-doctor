@@ -21,14 +21,14 @@ export async function getConsultation(
 
 export async function createConsultation(
   file: File,
-  model = "qwen3-asr-flash",
+  model?: string,
 ): Promise<ConsultationResponse> {
   const formData = new FormData();
   formData.append("file", file);
-  return api.post<ConsultationResponse>(
-    `/consultations?model=${encodeURIComponent(model)}`,
-    formData,
-  );
+  const url = model
+    ? `/consultations?model=${encodeURIComponent(model)}`
+    : "/consultations";
+  return api.post<ConsultationResponse>(url, formData);
 }
 
 export async function retryConsultation(id: string): Promise<ConsultationResponse> {

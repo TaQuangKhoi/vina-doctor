@@ -37,8 +37,6 @@ class RetryConsultationUseCase:
             consultation_id, ConsultationStatus.PENDING
         )
 
-        asyncio.create_task(
-            self._orchestrator.run(consultation_id, model="qwen3.5-omni-flash")
-        )
+        asyncio.create_task(self._orchestrator.run(consultation_id))
 
         return await self._consultation_repo.get_by_id(consultation_id)

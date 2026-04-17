@@ -33,7 +33,7 @@ class CreateConsultationUseCase:
         doctor_id: UUID,
         audio_bytes: bytes,
         filename: str,
-        model: str = "qwen3-asr-flash",
+        model: str | None = None,
     ) -> Consultation:
         consultation = Consultation(
             doctor_id=doctor_id,

@@ -5,39 +5,43 @@ import { useRouter } from "next/navigation";
 import { Button, Card } from "@/shared/components";
 import { AudioUploadZone } from "./AudioUploadZone";
 import { useAudioUpload } from "../hooks/useAudioUpload";
+import {
+  useAdminConfig,
+  SCRIBE_PRESET_MODELS,
+  CLINICAL_PRESET_MODELS,
+  DEFAULT_MODELS,
+} from "@/features/settings";
 
-const MODELS = [
-  {
-    id: "qwen3-asr-flash",
-    label: "Optimized Speed",
-    description: "Real-time transcription for busy walk-ins. Low latency response.",
-    icon: "⚡",
-  },
-  {
-    id: "qwen3.5-omni-flash",
-    label: "Maximum Accuracy",
-    description: "Deep clinical reasoning. Best for complex diagnostic recordings.",
-    icon: "🎯",
-  },
-];
-
-const PREFERRED_MODEL_KEY = "preferred_model";
-const DEFAULT_MODEL = "qwen3-asr-flash";
-
-function getInitialModel(): string {
-  if (typeof window === "undefined") return DEFAULT_MODEL;
-  return localStorage.getItem(PREFERRED_MODEL_KEY) ?? DEFAULT_MODEL;
+function resolveModelLabel(
+  modelId: string | undefined,
+  presets: readonly { id: string; label: string }[],
+  fallbackId: string,
+): { id: string; label: string } {
+  const id = modelId ?? fallbackId;
+  const preset = presets.find((m) => m.id === id);
+  return { id, label: preset?.label ?? id };
 }
 
 export function NewConsultationPage() {
   const router = useRouter();
   const upload = useAudioUpload();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [model, setModel] = useState<string>(getInitialModel);
+  const { data: config, isLoading: isConfigLoading } = useAdminConfig();
+
+  const scribe = resolveModelLabel(
+    config?.models?.scribe,
+    SCRIBE_PRESET_MODELS,
+    DEFAULT_MODELS.scribe,
+  );
+  const clinical = resolveModelLabel(
+    config?.models?.clinical,
+    CLINICAL_PRESET_MODELS,
+    DEFAULT_MODELS.clinical,
+  );
 
   async function handleSubmit() {
     if (!selectedFile) return;
-    const result = await upload.mutateAsync({ file: selectedFile, model });
+    const result = await upload.mutateAsync({ file: selectedFile });
     router.push(`/consultations/${result.id}`);
   }
 
@@ -95,29 +99,51 @@ export function NewConsultationPage() {
         </Card>
       )}
 
-      {/* Model Selection */}
+      {/* AI Models Info */}
       <div>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
-          AI Model Preference
+          AI Models
         </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {MODELS.map((m) => (
-            <button
-              key={m.id}
-              type="button"
-              onClick={() => setModel(m.id)}
-              className={`flex flex-col gap-2 rounded-2xl p-5 text-left transition-all ${
-                model === m.id
-                  ? "bg-surface-lowest ring-2 ring-primary-container shadow-[var(--shadow-ambient)]"
-                  : "bg-surface-low hover:bg-surface-lowest"
-              }`}
-            >
-              <span className="text-2xl">{m.icon}</span>
-              <p className="text-sm font-semibold text-on-surface">{m.label}</p>
-              <p className="text-xs text-on-surface-variant">{m.description}</p>
-            </button>
-          ))}
-        </div>
+        <Card className="flex flex-col gap-3 sm:flex-row sm:gap-0 sm:divide-x sm:divide-outline-variant">
+          {isConfigLoading ? (
+            <div className="flex flex-1 items-center gap-3 px-4 py-3">
+              <div className="h-8 w-8 animate-pulse rounded-lg bg-surface-low" />
+              <div className="flex flex-col gap-1.5">
+                <div className="h-3 w-24 animate-pulse rounded bg-surface-low" />
+                <div className="h-2.5 w-32 animate-pulse rounded bg-surface-low" />
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex flex-1 items-start gap-3 px-4 py-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-container/10 text-base">
+                  ⚡
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-on-surface-variant">Transcription</p>
+                  <p className="truncate text-sm font-semibold text-on-surface">{scribe.label}</p>
+                  <p className="truncate font-mono text-xs text-on-surface-variant/60">{scribe.id}</p>
+                </div>
+              </div>
+              <div className="flex flex-1 items-start gap-3 px-4 py-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-container/10 text-base">
+                  🩺
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-on-surface-variant">Clinical Analysis</p>
+                  <p className="truncate text-sm font-semibold text-on-surface">{clinical.label}</p>
+                  <p className="truncate font-mono text-xs text-on-surface-variant/60">{clinical.id}</p>
+                </div>
+              </div>
+            </>
+          )}
+        </Card>
+        <p className="mt-2 text-xs text-on-surface-variant/60">
+          Configured in{" "}
+          <a href="/settings" className="underline hover:text-on-surface-variant">
+            Settings
+          </a>
+        </p>
       </div>
 
       {/* Submit */}

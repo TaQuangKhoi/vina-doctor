@@ -29,7 +29,7 @@ class ConsultationOrchestrator:
         self._report_repo = report_repo
 
     async def run(
-        self, consultation_id: UUID, model: str = "qwen3-asr-flash"
+        self, consultation_id: UUID, model: str | None = None
     ) -> DomainReport:
         consultation = await self._consultation_repo.get_by_id(consultation_id)
 
