@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button, Card } from "@/shared/components";
 import { AudioUploadZone } from "./AudioUploadZone";
 import { useAudioUpload } from "../hooks/useAudioUpload";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { AiVoiceIcon, StethoscopeIcon } from "@hugeicons/core-free-icons";
 import {
   useAdminConfig,
   SCRIBE_PRESET_MODELS,
@@ -56,7 +58,6 @@ export function NewConsultationPage() {
         </p>
       </div>
 
-      {/* Upload Zone */}
       <AudioUploadZone
         onFileSelected={setSelectedFile}
         disabled={upload.isPending}
@@ -99,7 +100,6 @@ export function NewConsultationPage() {
         </Card>
       )}
 
-      {/* AI Models Info */}
       <div>
         <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
           AI Models
@@ -116,8 +116,8 @@ export function NewConsultationPage() {
           ) : (
             <>
               <div className="flex flex-1 items-start gap-3 px-4 py-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-container/10 text-base">
-                  ⚡
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-container/10">
+                  <HugeiconsIcon icon={AiVoiceIcon} className="h-4 w-4 text-primary" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-medium text-on-surface-variant">Transcription</p>
@@ -126,8 +126,8 @@ export function NewConsultationPage() {
                 </div>
               </div>
               <div className="flex flex-1 items-start gap-3 px-4 py-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-container/10 text-base">
-                  🩺
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-container/10">
+                  <HugeiconsIcon icon={StethoscopeIcon} className="h-4 w-4 text-primary" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-medium text-on-surface-variant">Clinical Analysis</p>
@@ -146,7 +146,6 @@ export function NewConsultationPage() {
         </p>
       </div>
 
-      {/* Submit */}
       {upload.isError && (
         <p className="rounded-lg bg-error-container px-4 py-3 text-sm text-on-error-container">
           Upload failed: {upload.error.message}
